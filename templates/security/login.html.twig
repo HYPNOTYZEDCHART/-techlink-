@@ -1,0 +1,60 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Connexion — TechLink{% endblock %}
+
+{% block body %}
+    <section class="max-w-md mx-auto px-6 py-16">
+        <h1 class="text-3xl font-bold mb-2">Connexion</h1>
+        <p class="text-neutral-500 text-sm mb-8">Ravi de te revoir sur TechLink.</p>
+
+        {% if error %}
+            <div class="bg-red-500/10 border border-red-500 text-red-500 text-sm rounded-xl px-4 py-3 mb-6">
+                {{ error.messageKey|trans(error.messageData, 'security') }}
+            </div>
+        {% endif %}
+
+        {% if app.user %}
+            <div class="bg-neutral-900 border border-neutral-800 text-sm rounded-xl px-4 py-3 mb-6">
+                Connecté en tant que {{ app.user.userIdentifier }}, <a href="{{ logout_path() }}" class="text-orange-500 hover:underline">se déconnecter</a>
+            </div>
+        {% endif %}
+
+        <form method="post" class="flex flex-col gap-5">
+            <div>
+                <label for="username" class="block text-sm text-neutral-400 mb-2">Email</label>
+                <input
+                    type="email"
+                    value="{{ last_username }}"
+                    name="_username"
+                    id="username"
+                    class="w-full bg-neutral-900 border border-neutral-700 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-orange-500"
+                    autocomplete="email"
+                    required
+                    autofocus
+                >
+            </div>
+
+            <div>
+                <label for="password" class="block text-sm text-neutral-400 mb-2">Mot de passe</label>
+                <input
+                    type="password"
+                    name="_password"
+                    id="password"
+                    class="w-full bg-neutral-900 border border-neutral-700 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-orange-500"
+                    autocomplete="current-password"
+                    required
+                >
+            </div>
+
+            <input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="{{ csrf_token('authenticate') }}">
+
+            <button class="bg-white text-black font-semibold px-6 py-3 rounded-full hover:bg-orange-500 transition w-full" type="submit">
+                Se connecter
+            </button>
+        </form>
+
+        <p class="text-sm text-neutral-500 mt-6 text-center">
+            Pas encore de compte ? <a href="{{ path('app_register') }}" class="text-orange-500 hover:underline">S'inscrire</a>
+        </p>
+    </section>
+{% endblock %}

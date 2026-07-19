@@ -1,0 +1,55 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Créer un compte — TechLink{% endblock %}
+
+{% block body %}
+    <section class="max-w-md mx-auto px-6 py-16">
+        <h1 class="text-3xl font-bold mb-2">Créer un compte</h1>
+        <p class="text-neutral-500 text-sm mb-8">Rejoins TechLink pour suivre tes commandes et profiter des offres.</p>
+
+        <div class="text-red-500 text-sm mb-4">
+            {{ form_errors(registrationForm) }}
+        </div>
+
+        {{ form_start(registrationForm, {attr: {class: 'flex flex-col gap-5'}}) }}
+    <div class="grid grid-cols-2 gap-4">
+        <div>
+            {{ form_label(registrationForm.firstName, 'Prénom', {label_attr: {class: 'block text-sm text-neutral-400 mb-2'}}) }}
+            {{ form_widget(registrationForm.firstName, {attr: {class: 'w-full bg-neutral-900 border border-neutral-700 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-orange-500'}}) }}
+        </div>
+        <div>
+            {{ form_label(registrationForm.lastName, 'Nom', {label_attr: {class: 'block text-sm text-neutral-400 mb-2'}}) }}
+            {{ form_widget(registrationForm.lastName, {attr: {class: 'w-full bg-neutral-900 border border-neutral-700 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-orange-500'}}) }}
+        </div>
+    </div>
+
+    <div>
+        {{ form_label(registrationForm.email, 'Email', {label_attr: {class: 'block text-sm text-neutral-400 mb-2'}}) }}
+                {{ form_widget(registrationForm.email, {attr: {class: 'w-full bg-neutral-900 border border-neutral-700 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-orange-500'}}) }}
+            </div>
+
+            <div>
+        {{ form_label(registrationForm.phone, 'Téléphone (optionnel)', {label_attr: {class: 'block text-sm text-neutral-400 mb-2'}}) }}
+        {{ form_widget(registrationForm.phone, {attr: {class: 'w-full bg-neutral-900 border border-neutral-700 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-orange-500'}}) }}
+    </div>
+
+            <div>
+                {{ form_label(registrationForm.plainPassword, 'Mot de passe', {label_attr: {class: 'block text-sm text-neutral-400 mb-2'}}) }}
+                {{ form_widget(registrationForm.plainPassword, {attr: {class: 'w-full bg-neutral-900 border border-neutral-700 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-orange-500'}}) }}
+            </div>
+
+            <div class="flex items-center gap-2">
+                {{ form_widget(registrationForm.agreeTerms, {attr: {class: 'w-4 h-4 accent-orange-500'}}) }}
+                {{ form_label(registrationForm.agreeTerms, "J'accepte les conditions générales", {label_attr: {class: 'text-sm text-neutral-400'}}) }}
+            </div>
+
+            <button type="submit" class="bg-white text-black font-semibold px-6 py-3 rounded-full hover:bg-orange-500 transition w-full">
+                Créer mon compte
+            </button>
+        {{ form_end(registrationForm) }}
+
+        <p class="text-sm text-neutral-500 mt-6 text-center">
+            Déjà un compte ? <a href="{{ path('app_login') }}" class="text-orange-500 hover:underline">Se connecter</a>
+        </p>
+    </section>
+{% endblock %}

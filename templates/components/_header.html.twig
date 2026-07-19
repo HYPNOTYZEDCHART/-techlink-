@@ -1,0 +1,112 @@
+<header class="sticky top-0 z-50 bg-black border-b border-neutral-800 transition-all duration-300" data-controller="header-scroll" data-header-scroll-target="header">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-6 transition-all duration-300">
+        <a href="{{ path('app_home') }}" class="text-2xl font-bold tracking-tight">
+    <span class="text-neutral-500">&lt;/</span><span class="text-orange-500">tech</span>link<span class="text-neutral-500">&gt;</span>
+</a>
+
+        <div class="hidden md:flex flex-1 max-w-xl relative" data-controller="search-suggestions">
+    <form action="{{ path('app_product_index') }}" method="get" class="w-full">
+        <input
+            type="text"
+            name="recherche"
+            placeholder="Rechercher un laptop, un smartphone..."
+            autocomplete="off"
+            data-search-suggestions-target="input"
+            data-action="input->search-suggestions#search"
+            class="w-full bg-neutral-900 border border-neutral-700 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-orange-500"
+        >
+    </form>
+
+    <div
+        data-search-suggestions-target="results"
+        class="hidden absolute left-0 top-full mt-2 w-full bg-neutral-950 border border-neutral-800 rounded-2xl shadow-xl overflow-hidden z-50 max-h-96 overflow-y-auto"
+    ></div>
+</div>
+        <div class="flex items-center gap-4">
+    <span class="hidden lg:flex items-center gap-2 text-xs text-neutral-500 border border-neutral-800 rounded-full px-3 py-1.5">
+        💳 Wave / Orange Money
+    </span>
+
+    {% if app.user %}
+    <a href="{{ path('app_account') }}" class="text-sm hover:text-orange-500 transition">
+        Bonjour {{ app.user.firstName }}
+    </a>
+        {% if is_granted('ROLE_ADMIN') %}
+            <a href="{{ path('admin') }}" class="text-sm text-orange-500 hover:underline">Admin</a>
+        {% endif %}
+        <a href="{{ path('app_logout') }}" class="text-sm text-neutral-400 hover:text-orange-500 transition">Déconnexion</a>
+    {% else %}
+        <a href="{{ path('app_login') }}" class="text-sm hover:text-orange-500 transition">Mon compte</a>
+    {% endif %}
+
+    <a href="{{ path('app_cart') }}" class="relative hover:text-orange-500 transition">
+        🛒
+        <span class="absolute -top-2 -right-2 bg-orange-500 text-black text-xs w-4 h-4 rounded-full flex items-center justify-center">{{ cart_count() }}</span>
+    </a>
+</div>
+    </div>
+
+    <div class="md:hidden px-6 pb-3 relative" data-controller="search-suggestions">
+        <form action="{{ path('app_product_index') }}" method="get">
+            <input
+                type="text"
+                name="recherche"
+                placeholder="Rechercher..."
+                autocomplete="off"
+                data-search-suggestions-target="input"
+                data-action="input->search-suggestions#search"
+                class="w-full bg-neutral-900 border border-neutral-700 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-orange-500"
+            >
+        </form>
+        <div
+            data-search-suggestions-target="results"
+            class="hidden absolute left-6 right-6 mt-2 bg-neutral-950 border border-neutral-800 rounded-2xl shadow-xl overflow-hidden z-50 max-h-96 overflow-y-auto"
+        ></div>
+    </div>
+
+    <nav class="border-t border-neutral-800">
+        <div class="max-w-7xl mx-auto px-6 flex items-center gap-8 text-sm">
+            <details class="relative py-3">
+                <summary class="cursor-pointer whitespace-nowrap hover:text-orange-500 transition list-none flex items-center gap-2 font-semibold">
+                    ☰ Toutes les catégories
+                </summary>
+                <div class="absolute left-0 top-full mt-1 w-[32rem] bg-neutral-950 border border-neutral-800 rounded-xl shadow-xl p-6 z-50 grid grid-cols-2 gap-8">
+                    <div>
+                        <p class="text-xs text-neutral-500 uppercase tracking-wide mb-4">Catégorie</p>
+                        <div class="flex flex-col gap-3">
+                            <a href="{{ path('app_product_index') }}" class="text-sm text-neutral-300 hover:text-orange-500 transition">
+                                Toutes les catégories
+                            </a>
+                            {% for category in all_categories() %}
+                                <a href="{{ path('app_product_index', {categorie: category.slug}) }}" class="text-sm text-neutral-300 hover:text-orange-500 transition">
+                                    {{ category.name }}
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-xs text-neutral-500 uppercase tracking-wide mb-4">Marque</p>
+                        <div class="flex flex-col gap-3">
+                            <a href="{{ path('app_product_index') }}" class="text-sm text-neutral-300 hover:text-orange-500 transition">
+                                Toutes les marques
+                            </a>
+                            {% for brand in all_brands() %}
+                                <a href="{{ path('app_product_index', {marque: brand}) }}" class="text-sm text-neutral-300 hover:text-orange-500 transition">
+                                    {{ brand }}
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </details>
+
+            <div class="flex items-center gap-8 overflow-x-auto">
+                {% for category in all_categories() %}
+                    <a href="{{ path('app_product_index', {categorie: category.slug}) }}" class="py-3 whitespace-nowrap hover:text-orange-500 transition">
+                        {{ category.name }}
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+    </nav>
+</header>

@@ -1,0 +1,50 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Politique de confidentialité — TechLink{% endblock %}
+
+{% block body %}
+    <section class="max-w-3xl mx-auto px-6 py-16">
+        <h1 class="text-3xl font-bold mb-8">Politique de confidentialité</h1>
+
+        <div class="flex flex-col gap-8 text-neutral-400 text-sm leading-relaxed">
+            <div>
+                <h2 class="text-white font-semibold text-lg mb-2">1. Données collectées</h2>
+                <p>Lors de la création d'un compte ou d'une commande, TechLink collecte les informations suivantes : nom, prénom, adresse email, numéro de téléphone et adresse de livraison. Ces données sont strictement nécessaires à la gestion de votre compte et au traitement de vos commandes.</p>
+            </div>
+
+            <div>
+                <h2 class="text-white font-semibold text-lg mb-2">2. Utilisation des données</h2>
+                <p>Vos données sont utilisées exclusivement pour : la création et la gestion de votre compte, le traitement et le suivi de vos commandes, la communication liée à une commande en cours (confirmation, livraison), et l'amélioration de nos services.</p>
+            </div>
+
+            <div>
+                <h2 class="text-white font-semibold text-lg mb-2">3. Conservation des données</h2>
+                <p>Vos données sont conservées aussi longtemps que votre compte reste actif. Vous pouvez à tout moment demander la suppression de votre compte et des données associées en nous contactant.</p>
+            </div>
+
+            <div>
+                <h2 class="text-white font-semibold text-lg mb-2">4. Partage des données</h2>
+                <p>TechLink ne vend ni ne loue vos données personnelles à des tiers. Vos informations de livraison peuvent être partagées avec nos partenaires logistiques uniquement dans le cadre de l'exécution de votre commande.</p>
+            </div>
+
+            <div>
+                <h2 class="text-white font-semibold text-lg mb-2">5. Sécurité</h2>
+                <p>Votre mot de passe est stocké de façon chiffrée (hashé) et n'est jamais accessible en clair, y compris par notre équipe. Nous mettons en œuvre des mesures raisonnables pour protéger vos données contre tout accès non autorisé.</p>
+            </div>
+
+            <div>
+                <h2 class="text-white font-semibold text-lg mb-2">6. Vos droits</h2>
+                <p>Vous disposez d'un droit d'accès, de rectification et de suppression de vos données personnelles. Pour exercer ces droits, contactez-nous via la <a href="{{ path('app_contact') }}" class="text-orange-500 hover:underline">page contact</a>.</p>
+            </div>
+
+            <div>
+                <h2 class="text-white font-semibold text-lg mb-2">7. Cookies</h2>
+                <p>Le site utilise uniquement les cookies techniques nécessaires à son fonctionnement (maintien de session, panier). Aucun cookie publicitaire ou de traçage tiers n'est utilisé.</p>
+            </div>
+
+            <div class="border-t border-neutral-800 pt-6 text-xs text-neutral-600">
+                Dernière mise à jour : {{ "now"|date("d/m/Y") }}
+            </div>
+        </div>
+    </section>
+{% endblock %}

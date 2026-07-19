@@ -1,0 +1,24 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block content_title %}Tableau de bord{% endblock %}
+
+{% block main %}
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div style="background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 24px;">
+            <p style="color: #999; font-size: 13px; margin-bottom: 8px;">Produits</p>
+            <p style="color: white; font-size: 28px; font-weight: bold;">{{ productCount }}</p>
+        </div>
+        <div style="background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 24px;">
+            <p style="color: #999; font-size: 13px; margin-bottom: 8px;">Catégories</p>
+            <p style="color: white; font-size: 28px; font-weight: bold;">{{ categoryCount }}</p>
+        </div>
+        <div style="background: #1a1a1a; border: 1px solid #f97316; border-radius: 12px; padding: 24px;">
+            <p style="color: #999; font-size: 13px; margin-bottom: 8px;">Commandes en attente</p>
+            <p style="color: #f97316; font-size: 28px; font-weight: bold;">{{ pendingOrdersCount }}</p>
+        </div>
+        <div style="background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 24px;">
+            <p style="color: #999; font-size: 13px; margin-bottom: 8px;">Chiffre d'affaires</p>
+            <p style="color: white; font-size: 28px; font-weight: bold;">{{ (totalRevenue / 100)|number_format(0, ',', ' ') }} XOF</p>
+        </div>
+    </div>
+{% endblock %}

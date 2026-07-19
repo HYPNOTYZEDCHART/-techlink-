@@ -1,0 +1,50 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Conditions générales — TechLink{% endblock %}
+
+{% block body %}
+    <section class="max-w-3xl mx-auto px-6 py-16">
+        <h1 class="text-3xl font-bold mb-8">Conditions générales de vente</h1>
+
+        <div class="flex flex-col gap-8 text-neutral-400 text-sm leading-relaxed">
+            <div>
+                <h2 class="text-white font-semibold text-lg mb-2">1. Objet</h2>
+                <p>Les présentes conditions générales régissent les ventes de produits électroniques réalisées sur TechLink, à destination de toute personne physique ou morale effectuant un achat via le site.</p>
+            </div>
+
+            <div>
+                <h2 class="text-white font-semibold text-lg mb-2">2. Produits et prix</h2>
+                <p>Les prix affichés sont exprimés en Francs CFA (XOF), toutes taxes comprises. TechLink se réserve le droit de modifier ses prix à tout moment, les produits étant facturés sur la base du tarif en vigueur au moment de la validation de la commande.</p>
+            </div>
+
+            <div>
+                <h2 class="text-white font-semibold text-lg mb-2">3. Commande</h2>
+                <p>Toute commande passée sur le site implique l'acceptation pleine et entière des présentes conditions générales. La commande est confirmée après validation du panier et communication d'une adresse de livraison et d'un numéro de téléphone valides.</p>
+            </div>
+
+            <div>
+                <h2 class="text-white font-semibold text-lg mb-2">4. Paiement</h2>
+                <p>Le paiement s'effectue via Wave, Orange Money ou en espèces à la livraison, selon les modalités convenues avec le client au moment de la confirmation de commande.</p>
+            </div>
+
+            <div>
+                <h2 class="text-white font-semibold text-lg mb-2">5. Livraison</h2>
+                <p>Les livraisons sont assurées à Dakar dans un délai indicatif de 24 heures après confirmation de la commande. Ce délai peut varier selon la disponibilité du produit et la localisation du client.</p>
+            </div>
+
+            <div>
+                <h2 class="text-white font-semibold text-lg mb-2">6. Garantie</h2>
+                <p>Les produits vendus bénéficient d'une garantie dont la durée (6 à 12 mois) est précisée sur la fiche de chaque produit. Cette garantie couvre les défauts de fabrication, à l'exclusion de toute détérioration résultant d'une mauvaise utilisation.</p>
+            </div>
+
+            <div>
+                <h2 class="text-white font-semibold text-lg mb-2">7. Droit de rétractation</h2>
+                <p>Le client dispose d'un délai raisonnable après réception pour signaler toute non-conformité du produit livré, dans les conditions précisées lors de la prise de contact avec le service client.</p>
+            </div>
+
+            <div class="border-t border-neutral-800 pt-6 text-xs text-neutral-600">
+                Dernière mise à jour : {{ "now"|date("d/m/Y") }}. Pour toute question relative à ces conditions, contactez-nous via la <a href="{{ path('app_contact') }}" class="text-orange-500 hover:underline">page contact</a>.
+            </div>
+        </div>
+    </section>
+{% endblock %}

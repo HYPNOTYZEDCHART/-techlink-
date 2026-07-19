@@ -1,0 +1,57 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mes commandes — TechLink{% endblock %}
+
+{% block body %}
+    <section class="max-w-3xl mx-auto px-6 py-16">
+        <h1 class="text-3xl font-bold mb-8">Mes commandes</h1>
+
+        {% if orders is empty %}
+            <div class="flex flex-col items-center justify-center py-24 text-center border border-neutral-800 rounded-2xl">
+                <div class="text-6xl mb-4">📦</div>
+                <p class="text-neutral-500 mb-6">Tu n'as pas encore passé de commande.</p>
+                <a href="{{ path('app_product_index') }}" class="bg-white text-black font-semibold px-6 py-3 rounded-full hover:bg-orange-500 transition">
+                    Voir le catalogue
+                </a>
+            </div>
+        {% else %}
+            <div class="flex flex-col gap-4">
+                {% for order in orders %}
+                    <div class="border border-neutral-800 rounded-2xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <p class="font-semibold">Commande n°{{ order.id }}</p>
+                                <p class="text-neutral-500 text-xs">{{ order.createdAt|date('d/m/Y à H:i') }}</p>
+                            </div>
+                            <span class="text-xs font-semibold px-3 py-1 rounded-full
+                                {% if order.status == 'pending' %} bg-orange-500/10 text-orange-500
+                                {% elseif order.status == 'confirmed' %} bg-blue-500/10 text-blue-500
+                                {% elseif order.status == 'shipped' %} bg-purple-500/10 text-purple-400
+                                {% elseif order.status == 'delivered' %} bg-green-500/10 text-green-500
+                                {% else %} bg-red-500/10 text-red-500
+                                {% endif %}">
+                                {% if order.status == 'pending' %}En attente
+                                {% elseif order.status == 'confirmed' %}Confirmée
+                                {% elseif order.status == 'shipped' %}Expédiée
+                                {% elseif order.status == 'delivered' %}Livrée
+                                {% else %}Annulée
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <div class="flex flex-col gap-1 text-sm text-neutral-400 mb-4">
+                            {% for item in order.orderItems %}
+                                <p>{{ item.product.name }}{% if item.selectedColor %} ({{ item.selectedColor }}){% endif %} × {{ item.quantity }}</p>
+                            {% endfor %}
+                        </div>
+
+                        <div class="flex justify-between items-center pt-4 border-t border-neutral-800">
+                            <span class="text-neutral-500 text-sm">Total</span>
+                            <span class="text-orange-500 font-bold">{{ (order.total / 100)|number_format(0, ',', ' ') }} XOF</span>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </section>
+{% endblock %}

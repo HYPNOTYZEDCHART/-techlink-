@@ -1,0 +1,86 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}<span class="text-neutral-500">&lt;/</span>techlink<span class="text-neutral-500">&gt;</span> — La tech pro, livrée vite à Dakar{% endblock %}
+
+{% block body %}
+    <section class="relative bg-gradient-to-b from-neutral-900 to-black py-24 px-6 overflow-hidden">
+        <div class="max-w-7xl mx-auto">
+            <span class="inline-block bg-neutral-800 text-orange-500 text-xs font-medium px-3 py-1 rounded-full mb-6">
+                ● Stock mis à jour en temps réel
+            </span>
+            <h1 class="text-5xl md:text-6xl font-bold leading-tight max-w-3xl">
+                La tech pro, livrée <span class="text-orange-500 italic">demain</span> à Dakar.
+            </h1>
+            <p class="text-neutral-400 mt-6 max-w-xl">
+                Laptops, smartphones, composants. Les meilleures marques mondiales, au prix juste, avec un SAV local.
+            </p>
+            <div class="flex gap-4 mt-8">
+                <a href="{{ path('app_product_index') }}" class="bg-white text-black font-semibold px-6 py-3 rounded-full hover:bg-orange-500 transition">
+                    Explorer le catalogue →
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="max-w-7xl mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+        <div class="border border-neutral-800 rounded-2xl p-6">
+            <p class="text-orange-500 font-semibold mb-1">🚚 Livraison 24h</p>
+            <p class="text-neutral-400 text-sm">Livré le lendemain partout à Dakar</p>
+        </div>
+        <div class="border border-neutral-800 rounded-2xl p-6">
+            <p class="text-orange-500 font-semibold mb-1">💳 Wave & Orange Money</p>
+            <p class="text-neutral-400 text-sm">Paiement mobile local accepté</p>
+        </div>
+        <div class="border border-neutral-800 rounded-2xl p-6">
+            <p class="text-orange-500 font-semibold mb-1">🛡️ Garantie 6-12 mois</p>
+            <p class="text-neutral-400 text-sm">Selon le produit acheté</p>
+        </div>
+    </section>
+
+    <section class="max-w-7xl mx-auto px-6 py-16">
+        <h2 class="text-2xl font-bold mb-8">Nouveautés</h2>
+
+        {% if featuredProducts is empty %}
+            <div class="flex flex-col items-center justify-center py-16 text-center border border-neutral-800 rounded-2xl">
+                <div class="text-5xl mb-4">🛍️</div>
+                <p class="text-neutral-400">Les premiers produits arrivent très bientôt — reviens vite !</p>
+            </div>
+        {% else %}
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                {% for product in featuredProducts %}
+                    <a href="{{ path('app_product_show', {slug: product.slug}) }}" class="relative border border-neutral-800 rounded-2xl p-4 hover:border-orange-500 hover:-translate-y-1 hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300 block group">
+                        {% if product.oldPrice and product.oldPrice > product.price %}
+                            {% set discount = ((product.oldPrice - product.price) / product.oldPrice * 100)|round %}
+                            <span class="absolute top-3 left-3 z-10 bg-orange-500 text-black text-xs font-bold px-2.5 py-1 rounded-full">
+                                -{{ discount }}%
+                            </span>
+                        {% endif %}
+
+                        {% if product.imageFilename %}
+                            <div class="overflow-hidden rounded-xl mb-4 bg-neutral-900">
+                                <img
+                                    src="{{ asset('images/products/' ~ product.imageFilename) }}"
+                                    alt="{{ product.name }}"
+                                    loading="lazy"
+                                    class="h-40 w-full object-cover opacity-0 group-hover:scale-110 transition-transform duration-300"
+                                    onload="this.classList.remove('opacity-0')"
+                                >
+                            </div>
+                        {% else %}
+                            <div class="bg-neutral-900 rounded-xl h-40 mb-4 animate-pulse"></div>
+                        {% endif %}
+
+                        <p class="text-xs text-neutral-500">{{ product.brand }}</p>
+                        <p class="font-semibold">{{ product.name }}</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <p class="text-orange-500 font-bold">{{ (product.price / 100)|number_format(0, ',', ' ') }} XOF</p>
+                            {% if product.oldPrice and product.oldPrice > product.price %}
+                                <p class="text-neutral-500 text-xs line-through">{{ (product.oldPrice / 100)|number_format(0, ',', ' ') }} XOF</p>
+                            {% endif %}
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </section>
+{% endblock %}

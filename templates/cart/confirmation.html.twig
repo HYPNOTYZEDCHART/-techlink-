@@ -1,0 +1,30 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Commande confirmée — TechLink{% endblock %}
+
+{% block body %}
+    <section class="max-w-2xl mx-auto px-6 py-16 text-center">
+        <div class="text-6xl mb-6">✅</div>
+        <h1 class="text-3xl font-bold mb-2">Commande confirmée !</h1>
+        <p class="text-neutral-500 mb-8">
+            Commande n°{{ order.id }} — nous te contactons bientôt au {{ order.deliveryPhone }} pour finaliser la livraison.
+        </p>
+
+        <div class="border border-neutral-800 rounded-2xl p-6 text-left mb-8">
+            {% for item in order.orderItems %}
+                <div class="flex justify-between text-sm py-2 {% if not loop.last %}border-b border-neutral-800{% endif %}">
+                    <span>{{ item.product.name }}{% if item.selectedColor %} ({{ item.selectedColor }}){% endif %} × {{ item.quantity }}</span>
+                    <span class="text-neutral-400">{{ ((item.unitPrice * item.quantity) / 100)|number_format(0, ',', ' ') }} XOF</span>
+                </div>
+            {% endfor %}
+            <div class="flex justify-between font-bold pt-4 mt-2 border-t border-neutral-800">
+                <span>Total</span>
+                <span class="text-orange-500">{{ (order.total / 100)|number_format(0, ',', ' ') }} XOF</span>
+            </div>
+        </div>
+
+        <a href="{{ path('app_product_index') }}" class="bg-white text-black font-semibold px-6 py-3 rounded-full hover:bg-orange-500 transition">
+            Continuer mes achats
+        </a>
+    </section>
+{% endblock %}

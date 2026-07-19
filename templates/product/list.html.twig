@@ -1,0 +1,94 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Catalogue — TechLink{% endblock %}
+
+{% block body %}
+    <section class="max-w-7xl mx-auto px-6 py-12">
+
+        <div class="flex items-center justify-between mb-8">
+            <h1 class="text-3xl font-bold">
+                {% if selectedCategory %}{{ selectedCategory.name }}{% else %}Tous nos produits{% endif %}
+                {% if selectedBrand %} — {{ selectedBrand }}{% endif %}
+            </h1>
+            <p class="text-neutral-500 text-sm">{{ products|length }} résultat{{ products|length > 1 ? 's' : '' }}</p>
+        </div>
+
+        {% if products is empty %}
+            <div class="flex flex-col items-center justify-center py-24 text-center">
+                <div class="text-6xl mb-4">📦</div>
+                <h2 class="text-xl font-bold mb-2">Aucun produit trouvé</h2>
+                <p class="text-neutral-500 mb-6 max-w-sm">
+                    Aucun produit ne correspond à ta recherche pour le moment. Essaie un autre filtre ou reviens plus tard.
+                </p>
+                <a href="{{ path('app_product_index') }}" class="bg-white text-black font-semibold px-6 py-3 rounded-full hover:bg-orange-500 transition">
+                    Voir tous les produits
+                </a>
+            </div>
+        {% else %}
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                {% for product in products %}
+                    <a href="{{ path('app_product_show', {slug: product.slug}) }}" class="relative border border-neutral-800 rounded-2xl p-4 hover:border-orange-500 hover:-translate-y-1 hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300 block group">
+                        {% if product.oldPrice and product.oldPrice > product.price %}
+                            {% set discount = ((product.oldPrice - product.price) / product.oldPrice * 100)|round %}
+                            <span class="absolute top-3 left-3 z-10 bg-orange-500 text-black text-xs font-bold px-2.5 py-1 rounded-full">
+                                -{{ discount }}%
+                            </span>
+                        {% endif %}
+
+                        {% if product.imageFilename %}
+                            <div class="overflow-hidden rounded-xl mb-4 bg-neutral-900">
+                                <img
+                                    src="{{ asset('images/products/' ~ product.imageFilename) }}"
+                                    alt="{{ product.name }}"
+                                    loading="lazy"
+                                    class="h-40 w-full object-cover opacity-0 group-hover:scale-110 transition-transform duration-300"
+                                    onload="this.classList.remove('opacity-0')"
+                                >
+                            </div>
+                        {% else %}
+                            <div class="bg-neutral-900 rounded-xl h-40 mb-4 animate-pulse"></div>
+                        {% endif %}
+
+                        <p class="text-xs text-neutral-500">{{ product.brand }}</p>
+                        <p class="font-semibold">{{ product.name }}</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <p class="text-orange-500 font-bold">{{ (product.price / 100)|number_format(0, ',', ' ') }} XOF</p>
+                            {% if product.oldPrice and product.oldPrice > product.price %}
+                                <p class="text-neutral-500 text-xs line-through">{{ (product.oldPrice / 100)|number_format(0, ',', ' ') }} XOF</p>
+                            {% endif %}
+                        </div>
+                        <p class="text-xs text-neutral-500 mt-1">
+                            {% if product.stock > 0 %}
+                                En stock ({{ product.stock }})
+                            {% else %}
+                                Rupture de stock
+                            {% endif %}
+                        </p>
+                    </a>
+                {% endfor %}
+            </div>
+
+            {% if totalPages > 1 %}
+                <div class="flex items-center justify-center gap-2 mt-12">
+                    {% if currentPage > 1 %}
+                        <a href="{{ path('app_product_index', app.request.query.all|merge({page: currentPage - 1})) }}" class="px-4 py-2 rounded-full border border-neutral-800 text-sm hover:border-orange-500 hover:text-orange-500 transition">
+                            ← Précédent
+                        </a>
+                    {% endif %}
+
+                    {% for i in 1..totalPages %}
+                        <a href="{{ path('app_product_index', app.request.query.all|merge({page: i})) }}" class="w-10 h-10 flex items-center justify-center rounded-full text-sm transition {{ i == currentPage ? 'bg-orange-500 text-black font-semibold' : 'border border-neutral-800 hover:border-orange-500 hover:text-orange-500' }}">
+                            {{ i }}
+                        </a>
+                    {% endfor %}
+
+                    {% if currentPage < totalPages %}
+                        <a href="{{ path('app_product_index', app.request.query.all|merge({page: currentPage + 1})) }}" class="px-4 py-2 rounded-full border border-neutral-800 text-sm hover:border-orange-500 hover:text-orange-500 transition">
+                            Suivant →
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% endif %}
+    </section>
+{% endblock %}

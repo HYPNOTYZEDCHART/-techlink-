@@ -1,0 +1,78 @@
+<footer class="bg-neutral-950 border-t border-neutral-800 mt-20">
+
+    <div class="max-w-7xl mx-auto px-6 py-10 border-b border-neutral-800">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+                <p class="text-white font-semibold text-lg mb-1">Reste informé des nouveautés</p>
+                <p class="text-neutral-500 text-sm">Nouveaux produits, promos et bons plans, directement dans ta boîte mail.</p>
+            </div>
+            <form method="post" action="{{ path('app_newsletter_subscribe') }}" class="flex w-full md:w-auto gap-2">
+                <input
+                    type="email"
+                    name="email"
+                    placeholder="Ton adresse email"
+                    class="flex-1 md:w-72 bg-neutral-900 border border-neutral-700 rounded-full px-5 py-2.5 text-sm text-white focus:outline-none focus:border-orange-500"
+                >
+                <button type="submit" class="bg-white text-black font-semibold px-6 py-2.5 rounded-full hover:bg-orange-500 transition whitespace-nowrap">
+                    S'inscrire
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-5 gap-8 text-sm">
+
+        <div class="col-span-2">
+            <a href="{{ path('app_home') }}" class="text-xl font-bold tracking-tight text-white">
+    <span class="text-neutral-500">&lt;/</span><span class="text-orange-500">tech</span>link<span class="text-neutral-500">&gt;</span>
+</a>
+            <p class="text-neutral-500 mt-4 max-w-xs">
+                La tech pro, livrée vite à Dakar. Laptops, smartphones et accessoires des meilleures marques, au prix juste.
+            </p>
+            <div class="flex gap-3 mt-6">
+                <a href="#" aria-label="Facebook" class="w-9 h-9 flex items-center justify-center rounded-full border border-neutral-800 hover:border-orange-500 hover:text-orange-500 transition">f</a>
+                <a href="#" aria-label="Instagram" class="w-9 h-9 flex items-center justify-center rounded-full border border-neutral-800 hover:border-orange-500 hover:text-orange-500 transition">ig</a>
+                <a href="#" aria-label="TikTok" class="w-9 h-9 flex items-center justify-center rounded-full border border-neutral-800 hover:border-orange-500 hover:text-orange-500 transition">tt</a>
+            </div>
+        </div>
+
+        <div>
+            <p class="text-white font-semibold mb-4">Boutique</p>
+            <ul class="flex flex-col gap-3 text-neutral-400">
+                <li><a href="{{ path('app_product_index') }}" class="hover:text-orange-500 transition">Tous les produits</a></li>
+                {% for category in all_categories() %}
+                    <li><a href="{{ path('app_product_index', {categorie: category.slug}) }}" class="hover:text-orange-500 transition">{{ category.name }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+
+       <div>
+    <p class="text-white font-semibold mb-4">Infos légales</p>
+    <ul class="flex flex-col gap-3 text-neutral-400">
+        <li><a href="{{ path('app_contact') }}" class="hover:text-orange-500 transition">Contact</a></li>
+        <li><a href="{{ path('app_terms') }}" class="hover:text-orange-500 transition">Conditions générales</a></li>
+        <li><a href="{{ path('app_privacy') }}" class="hover:text-orange-500 transition">Confidentialité</a></li>
+    </ul>
+</div>
+
+    </div>
+
+    <div class="max-w-7xl mx-auto px-6 py-8 border-t border-neutral-800 grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-neutral-400">
+        <div>
+            <p class="text-white font-semibold mb-1">🚚 Livraison</p>
+            <p>Livraison en 24h à Dakar</p>
+        </div>
+        <div>
+            <p class="text-white font-semibold mb-1">💳 Paiement</p>
+            <p>Wave · Orange Money</p>
+        </div>
+        <div>
+            <p class="text-white font-semibold mb-1">🛡️ Garantie</p>
+            <p>De 6 à 12 mois selon le produit</p>
+        </div>
+    </div>
+
+    <div class="text-center text-xs text-neutral-600 py-6 border-t border-neutral-800">
+        &copy; {{ "now"|date("Y") }} <span class="text-neutral-500">&lt;/</span>techlink<span class="text-neutral-500">&gt;</span>. Tous droits réservés.
+    </div>
+</footer>

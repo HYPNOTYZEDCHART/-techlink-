@@ -1,0 +1,32 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Contact — TechLink{% endblock %}
+
+{% block body %}
+    <section class="max-w-2xl mx-auto px-6 py-16">
+        <h1 class="text-3xl font-bold mb-8">Nous contacter</h1>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+            <div class="border border-neutral-800 rounded-2xl p-6">
+                <p class="text-orange-500 font-semibold mb-2">📞 Téléphone</p>
+                <p class="text-neutral-400 text-sm">+221 77 395 69 66</p>
+            </div>
+            <div class="border border-neutral-800 rounded-2xl p-6">
+                <p class="text-orange-500 font-semibold mb-2">💬 WhatsApp</p>
+                <p class="text-neutral-400 text-sm">Réponse rapide, du lundi au samedi</p>
+            </div>
+            <div class="border border-neutral-800 rounded-2xl p-6">
+                <p class="text-orange-500 font-semibold mb-2">📍 Adresse</p>
+                <p class="text-neutral-400 text-sm">Point E, Dakar, Sénégal</p>
+            </div>
+            <div class="border border-neutral-800 rounded-2xl p-6">
+                <p class="text-orange-500 font-semibold mb-2">🕐 Horaires</p>
+                <p class="text-neutral-400 text-sm">Lun–Sam, 9h–19h</p>
+            </div>
+        </div>
+
+        <p class="text-neutral-500 text-sm">
+            Pour toute question sur un produit ou une commande, le plus rapide reste de nous écrire directement sur WhatsApp via le bouton en bas de l'écran.
+        </p>
+    </section>
+{% endblock %}

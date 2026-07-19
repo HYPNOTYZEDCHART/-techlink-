@@ -1,0 +1,70 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mon panier — TechLink{% endblock %}
+
+{% block body %}
+    <section class="max-w-4xl mx-auto px-6 py-12">
+        <h1 class="text-3xl font-bold mb-8">Mon panier</h1>
+
+        {% for message in app.flashes('success') %}
+            <div class="bg-green-500/10 border border-green-500 text-green-500 text-sm rounded-xl px-4 py-3 mb-6">
+                {{ message }}
+            </div>
+        {% endfor %}
+
+        {% if items is empty %}
+            <div class="flex flex-col items-center justify-center py-24 text-center border border-neutral-800 rounded-2xl">
+                <div class="text-6xl mb-4">🛒</div>
+                <h2 class="text-xl font-bold mb-2">Ton panier est vide</h2>
+                <p class="text-neutral-500 mb-6">Découvre nos produits et ajoute-en à ton panier.</p>
+                <a href="{{ path('app_product_index') }}" class="bg-white text-black font-semibold px-6 py-3 rounded-full hover:bg-orange-500 transition">
+                    Voir le catalogue
+                </a>
+            </div>
+        {% else %}
+            <div class="flex flex-col gap-4 mb-8">
+                {% for item in items %}
+                    <div class="flex items-center gap-4 border border-neutral-800 rounded-2xl p-4">
+                        {% if item.product.imageFilename %}
+                            <img src="{{ asset('images/products/' ~ item.product.imageFilename) }}" alt="{{ item.product.name }}" class="w-20 h-20 rounded-xl object-cover">
+                        {% else %}
+                            <div class="w-20 h-20 rounded-xl bg-neutral-900"></div>
+                        {% endif %}
+
+                        <div class="flex-1">
+    <p class="font-semibold">{{ item.product.name }}</p>
+    {% if item.selectedColor %}
+        <p class="text-xs text-neutral-500">Couleur : {{ item.selectedColor }}</p>
+    {% endif %}
+    <p class="text-orange-500 font-bold">{{ (item.product.price / 100)|number_format(0, ',', ' ') }} XOF</p>
+</div>
+
+                        <form method="post" action="{{ path('app_cart_update', {id: item.id}) }}" class="flex items-center gap-2">
+                            <input
+                                type="number"
+                                name="quantity"
+                                value="{{ item.quantity }}"
+                                min="0"
+                                class="w-16 bg-neutral-900 border border-neutral-700 rounded-full px-3 py-1.5 text-sm text-center focus:outline-none focus:border-orange-500"
+                            >
+                            <button type="submit" class="text-xs text-neutral-400 hover:text-orange-500 transition">Mettre à jour</button>
+                        </form>
+
+                        <form method="post" action="{{ path('app_cart_remove', {id: item.id}) }}">
+                            <button type="submit" class="text-red-500 hover:text-red-400 transition text-sm">Retirer</button>
+                        </form>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="flex items-center justify-between border-t border-neutral-800 pt-6">
+                <p class="text-lg font-bold">Total</p>
+                <p class="text-2xl font-bold text-orange-500">{{ (total / 100)|number_format(0, ',', ' ') }} XOF</p>
+            </div>
+
+            <a href="{{ path('app_cart_checkout') }}" class="mt-6 block text-center bg-white text-black font-semibold px-6 py-3 rounded-full hover:bg-orange-500 transition">
+    Passer la commande
+</a>
+        {% endif %}
+    </section>
+{% endblock %}
