@@ -12,6 +12,7 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\IsTrue;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\Regex;
 
 class RegistrationFormType extends AbstractType
 {
@@ -21,17 +22,25 @@ class RegistrationFormType extends AbstractType
             ->add('firstName', TextType::class, [
                 'constraints' => [
                     new NotBlank(message: 'Merci de renseigner ton prénom'),
+                    new Length(min: 2, max: 100, minMessage: 'Le prénom doit contenir au moins {{ limit }} caractères'),
                 ],
             ])
             ->add('lastName', TextType::class, [
                 'constraints' => [
                     new NotBlank(message: 'Merci de renseigner ton nom'),
+                    new Length(min: 2, max: 100, minMessage: 'Le nom doit contenir au moins {{ limit }} caractères'),
                 ],
             ])
             ->add('email')
             ->add('phone', TextType::class, [
                 'required' => false,
                 'label' => 'Téléphone (optionnel)',
+                'constraints' => [
+                    new Regex(
+                        pattern: '/^[0-9+\s]{9,20}$/',
+                        message: 'Merci de saisir un numéro de téléphone valide',
+                    ),
+                ],
             ])
             ->add('agreeTerms', CheckboxType::class, [
                 'mapped' => false,

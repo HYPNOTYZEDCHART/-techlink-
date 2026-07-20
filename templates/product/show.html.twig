@@ -74,7 +74,15 @@
             </p>
 
             {% if app.user %}
-                <form method="post" action="{{ path('app_cart_add', {id: product.id}) }}">
+                <form method="post" action="{{ path('app_cart_add', {id: product.id}) }}" data-controller="loading-button">
+                <div class="mb-6">
+    <p class="text-sm text-neutral-400 mb-3">Quantité</p>
+    <div class="flex items-center gap-3 w-fit border border-neutral-700 rounded-full px-2 py-1">
+        <button type="button" onclick="this.nextElementSibling.stepDown()" class="w-8 h-8 flex items-center justify-center hover:text-orange-500 transition text-lg">−</button>
+        <input type="number" name="quantity" value="1" min="1" max="{{ product.stock }}" class="w-12 text-center bg-transparent focus:outline-none">
+        <button type="button" onclick="this.previousElementSibling.stepUp()" class="w-8 h-8 flex items-center justify-center hover:text-orange-500 transition text-lg">+</button>
+    </div>
+</div>
                     {% if product.colors %}
                         <div class="mb-6">
                             <p class="text-sm text-neutral-400 mb-3">Couleur</p>

@@ -30,9 +30,10 @@ final class CartController extends AbstractController
     #[Route('/panier/ajouter/{id}', name: 'app_cart_add', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
     public function add(Product $product, Request $request, CartManager $cartManager): Response
-    {
-        $color = $request->request->get('color');
-        $cartManager->addProduct($this->getUser(), $product, 1, $color);
+{
+    $color = $request->request->get('color');
+    $quantity = max(1, (int) $request->request->get('quantity', 1));
+    $cartManager->addProduct($this->getUser(), $product, $quantity, $color);
 
         $this->addFlash('success', $product->getName() . ' ajouté au panier');
 

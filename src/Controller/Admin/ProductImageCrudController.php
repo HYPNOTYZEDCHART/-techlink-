@@ -23,8 +23,19 @@ class ProductImageCrudController extends AbstractCrudController
             IdField::new('id')->hideOnForm(),
             AssociationField::new('product', 'Produit'),
             TextField::new('imageFile', 'Image')
-                ->setFormType(VichImageType::class)
-                ->onlyOnForms(),
+    ->setFormType(VichImageType::class)
+    ->setFormTypeOptions([
+        'allow_delete' => true,
+        'constraints' => [
+            new \Symfony\Component\Validator\Constraints\File(
+                maxSize: '5M',
+                mimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+                mimeTypesMessage: 'Merci d\'uploader une image valide (JPEG, PNG ou WebP)',
+                maxSizeMessage: 'L\'image ne doit pas dépasser {{ limit }} {{ suffix }}',
+            ),
+        ],
+    ])
+    ->onlyOnForms(),
             IntegerField::new('position', 'Ordre d\'affichage'),
         ];
     }
