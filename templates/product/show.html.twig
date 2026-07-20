@@ -74,7 +74,7 @@
             </p>
 
             {% if app.user %}
-                <form method="post" action="{{ path('app_cart_add', {id: product.id}) }}" data-controller="loading-button">
+                <form method="post" action="{{ path('app_cart_add', {id: product.id}) }}" data-controller="add-to-cart-toast">
                 <div class="mb-6">
     <p class="text-sm text-neutral-400 mb-3">Quantité</p>
     <div class="flex items-center gap-3 w-fit border border-neutral-700 rounded-full px-2 py-1">

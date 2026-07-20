@@ -41,7 +41,7 @@
 
     <a href="{{ path('app_cart') }}" class="relative hover:text-orange-500 transition">
         🛒
-        <span class="absolute -top-2 -right-2 bg-orange-500 text-black text-xs w-4 h-4 rounded-full flex items-center justify-center">{{ cart_count() }}</span>
+        <span data-cart-count class="absolute -top-2 -right-2 bg-orange-500 text-black text-xs w-4 h-4 rounded-full flex items-center justify-center">{{ cart_count() }}</span>
     </a>
 </div>
     </div>
