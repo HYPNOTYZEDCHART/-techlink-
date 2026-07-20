@@ -63,37 +63,52 @@ class ProductRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    public function findPaginated(array $criteria, int $page, int $limit = 12): Paginator
-    {
-        $qb = $this->createQueryBuilder('p');
+    public function findPaginated(array $criteria, int $page, int $limit = 12, ?int $priceMin = null, ?int $priceMax = null): Paginator
+{
+    $qb = $this->createQueryBuilder('p');
 
-        foreach ($criteria as $field => $value) {
-            $qb->andWhere("p.$field = :$field")
-                ->setParameter($field, $value);
-        }
-
-        $qb->orderBy('p.createdAt', 'DESC')
-            ->setFirstResult(($page - 1) * $limit)
-            ->setMaxResults($limit);
-
-        return new Paginator($qb);
+    foreach ($criteria as $field => $value) {
+        $qb->andWhere("p.$field = :$field")
+            ->setParameter($field, $value);
     }
 
-    public function searchPaginated(string $search, array $criteria, int $page, int $limit = 12): Paginator
-    {
-        $qb = $this->createQueryBuilder('p')
-            ->andWhere('p.name LIKE :search OR p.brand LIKE :search OR p.description LIKE :search')
-            ->setParameter('search', '%' . $search . '%')
-            ->orderBy('p.createdAt', 'DESC');
-
-        foreach ($criteria as $field => $value) {
-            $qb->andWhere("p.$field = :$field")
-                ->setParameter($field, $value);
-        }
-
-        $qb->setFirstResult(($page - 1) * $limit)
-            ->setMaxResults($limit);
-
-        return new Paginator($qb);
+    if ($priceMin !== null) {
+        $qb->andWhere('p.price >= :priceMin')->setParameter('priceMin', $priceMin * 100);
     }
+
+    if ($priceMax !== null) {
+        $qb->andWhere('p.price <= :priceMax')->setParameter('priceMax', $priceMax * 100);
+    }
+
+    $qb->orderBy('p.createdAt', 'DESC')
+        ->setFirstResult(($page - 1) * $limit)
+        ->setMaxResults($limit);
+
+    return new Paginator($qb);
+}
+    public function searchPaginated(string $search, array $criteria, int $page, int $limit = 12, ?int $priceMin = null, ?int $priceMax = null): Paginator
+{
+    $qb = $this->createQueryBuilder('p')
+        ->andWhere('p.name LIKE :search OR p.brand LIKE :search OR p.description LIKE :search')
+        ->setParameter('search', '%' . $search . '%')
+        ->orderBy('p.createdAt', 'DESC');
+
+    foreach ($criteria as $field => $value) {
+        $qb->andWhere("p.$field = :$field")
+            ->setParameter($field, $value);
+    }
+
+    if ($priceMin !== null) {
+        $qb->andWhere('p.price >= :priceMin')->setParameter('priceMin', $priceMin * 100);
+    }
+
+    if ($priceMax !== null) {
+        $qb->andWhere('p.price <= :priceMax')->setParameter('priceMax', $priceMax * 100);
+    }
+
+    $qb->setFirstResult(($page - 1) * $limit)
+        ->setMaxResults($limit);
+
+    return new Paginator($qb);
+}
 }

@@ -70,7 +70,7 @@
                 <summary class="cursor-pointer whitespace-nowrap hover:text-orange-500 transition list-none flex items-center gap-2 font-semibold">
                     ☰ Toutes les catégories
                 </summary>
-                <div class="absolute left-0 top-full mt-1 w-[32rem] bg-neutral-950 border border-neutral-800 rounded-xl shadow-xl p-6 z-50 grid grid-cols-2 gap-8">
+                <div class="absolute left-0 top-full mt-1 w-[48rem] bg-neutral-950 border border-neutral-800 rounded-xl shadow-xl p-6 z-50 grid grid-cols-3 gap-8">
                     <div>
                         <p class="text-xs text-neutral-500 uppercase tracking-wide mb-4">Catégorie</p>
                         <div class="flex flex-col gap-3">
@@ -97,6 +97,16 @@
                             {% endfor %}
                         </div>
                     </div>
+                    <div>
+    <p class="text-xs text-neutral-500 uppercase tracking-wide mb-4">Prix (XOF)</p>
+    <form action="{{ path('app_product_index') }}" method="get" class="flex flex-col gap-3">
+        <input type="number" name="prix_min" placeholder="Min" class="w-full bg-neutral-900 border border-neutral-700 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-orange-500">
+        <input type="number" name="prix_max" placeholder="Max" class="w-full bg-neutral-900 border border-neutral-700 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-orange-500">
+        <button type="submit" class="bg-white text-black text-sm font-semibold px-4 py-2 rounded-full hover:bg-orange-500 transition">
+            Appliquer
+        </button>
+    </form>
+</div>
                 </div>
             </details>
 

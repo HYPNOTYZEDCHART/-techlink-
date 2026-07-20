@@ -34,14 +34,18 @@ final class ProductController extends AbstractController
         if ($brand) {
             $criteria['brand'] = $brand;
         }
+         
 
-        $page = max(1, (int) $request->query->get('page', 1));
+        $priceMin = $request->query->get('prix_min') ? (int) $request->query->get('prix_min') : null;
+        $priceMax = $request->query->get('prix_max') ? (int) $request->query->get('prix_max') : null;
 
-        if ($search) {
-            $paginator = $productRepository->searchPaginated($search, $criteria, $page);
-        } else {
-            $paginator = $productRepository->findPaginated($criteria, $page);
-        }
+$page = max(1, (int) $request->query->get('page', 1));
+
+if ($search) {
+    $paginator = $productRepository->searchPaginated($search, $criteria, $page, 12, $priceMin, $priceMax);
+} else {
+    $paginator = $productRepository->findPaginated($criteria, $page, 12, $priceMin, $priceMax);
+}
 
         $products = $paginator;
         $totalPages = (int) ceil(count($paginator) / 12);
@@ -53,6 +57,8 @@ final class ProductController extends AbstractController
             'allBrands' => $productRepository->findDistinctBrands(),
             'currentPage' => $page,
             'totalPages' => $totalPages,
+            'priceMin' => $priceMin,
+            'priceMax' => $priceMax,
         ]);
     }
 
