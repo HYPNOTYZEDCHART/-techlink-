@@ -9,12 +9,16 @@ use App\Repository\CartItemRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Entity\CustomerOrder;
 use App\Entity\OrderItem;
+use Symfony\Bridge\Twig\Mime\TemplatedEmail;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mime\Address;
 
 class CartManager
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
         private CartItemRepository $cartItemRepository,
+        private MailerInterface $mailer,
     ) {
     }
 
@@ -39,7 +43,9 @@ class CartManager
         }
 
         $this->entityManager->flush();
-    }    public function removeItem(CartItem $cartItem): void
+    }
+
+    public function removeItem(CartItem $cartItem): void
     {
         $this->entityManager->remove($cartItem);
         $this->entityManager->flush();
@@ -82,6 +88,7 @@ class CartManager
 
         return $total;
     }
+
     public function checkout(User $user, string $deliveryAddress, string $deliveryPhone): CustomerOrder
     {
         $items = $this->getItems($user);
@@ -101,19 +108,35 @@ class CartManager
         $this->entityManager->persist($order);
 
         foreach ($items as $cartItem) {
-            $orderItem = new OrderItem();
-            $orderItem->setCustomerOrder($order);
-            $orderItem->setProduct($cartItem->getProduct());
-            $orderItem->setQuantity($cartItem->getQuantity());
-            $orderItem->setUnitPrice($cartItem->getProduct()->getPrice());
-            $orderItem->setSelectedColor($cartItem->getSelectedColor());
+    $orderItem = new OrderItem();
+    $orderItem->setProduct($cartItem->getProduct());
+    $orderItem->setQuantity($cartItem->getQuantity());
+    $orderItem->setUnitPrice($cartItem->getProduct()->getPrice());
+    $orderItem->setSelectedColor($cartItem->getSelectedColor());
 
-            $this->entityManager->persist($orderItem);
-            $this->entityManager->remove($cartItem);
-        }
+    $order->addOrderItem($orderItem);
+    $this->entityManager->persist($orderItem);
+    $this->entityManager->remove($cartItem);
+}
 
         $this->entityManager->flush();
 
+        $this->sendOrderConfirmationEmail($order);
+
         return $order;
+    }
+
+    private function sendOrderConfirmationEmail(CustomerOrder $order): void
+    {
+        $email = (new TemplatedEmail())
+            ->from(new Address('doumbiabecaye7@gmail.com', 'TechLink'))
+            ->to((string) $order->getUser()->getEmail())
+            ->subject('Confirmation de ta commande n°' . $order->getId())
+            ->htmlTemplate('emails/order_confirmation.html.twig')
+            ->context([
+                'order' => $order,
+            ]);
+
+        $this->mailer->send($email);
     }
 }

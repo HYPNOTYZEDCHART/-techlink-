@@ -11,6 +11,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use App\Service\InvoiceGenerator;
 
 final class CartController extends AbstractController
 {
@@ -96,4 +97,20 @@ final class CartController extends AbstractController
             'order' => $order,
         ]);
     }
+
+    #[Route('/commande/{id}/facture', name: 'app_order_invoice')]
+#[IsGranted('ROLE_USER')]
+public function invoice(CustomerOrder $order, InvoiceGenerator $invoiceGenerator): Response
+{
+    if ($order->getUser() !== $this->getUser()) {
+        throw $this->createAccessDeniedException();
+    }
+
+    $pdf = $invoiceGenerator->generate($order);
+
+    return new Response($pdf, 200, [
+        'Content-Type' => 'application/pdf',
+        'Content-Disposition' => 'attachment; filename="facture-' . $order->getId() . '.pdf"',
+    ]);
+}
 }

@@ -1,0 +1,31 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau mot de passe — TechLink{% endblock %}
+
+{% block body %}
+    <section class="max-w-md mx-auto px-6 py-16">
+        <h1 class="text-3xl font-bold mb-2">Nouveau mot de passe</h1>
+        <p class="text-neutral-500 text-sm mb-8">Choisis un nouveau mot de passe pour ton compte.</p>
+
+        {{ form_start(resetForm, {attr: {class: 'flex flex-col gap-5', 'data-turbo': 'false'}}) }}
+        <div class="text-red-500 text-sm mb-2 flex flex-col gap-1">
+             {{ form_errors(resetForm) }}
+             {{ form_errors(resetForm.plainPassword) }}
+             {{ form_errors(resetForm.plainPassword.first) }}
+             {{ form_errors(resetForm.plainPassword.second) }}
+        </div>
+            <div>
+                {{ form_label(resetForm.plainPassword.first, 'Nouveau mot de passe', {label_attr: {class: 'block text-sm text-neutral-400 mb-2'}}) }}
+                {{ form_widget(resetForm.plainPassword.first, {attr: {class: 'w-full bg-neutral-900 border border-neutral-700 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-orange-500'}}) }}
+            </div>
+            <div>
+                {{ form_label(resetForm.plainPassword.second, 'Confirme le mot de passe', {label_attr: {class: 'block text-sm text-neutral-400 mb-2'}}) }}
+                {{ form_widget(resetForm.plainPassword.second, {attr: {class: 'w-full bg-neutral-900 border border-neutral-700 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-orange-500'}}) }}
+            </div>
+
+            <button type="submit" class="bg-white text-black font-semibold px-6 py-3 rounded-full hover:bg-orange-500 transition w-full">
+                Réinitialiser le mot de passe
+            </button>
+        {{ form_end(resetForm) }}
+    </section>
+{% endblock %}

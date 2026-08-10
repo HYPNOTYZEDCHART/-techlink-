@@ -1,0 +1,27 @@
+<div style="background: #0a0a0a; padding: 40px 20px; font-family: -apple-system, sans-serif;">
+    <div style="max-width: 480px; margin: 0 auto; background: #171717; border-radius: 16px; padding: 32px; border: 1px solid #262626;">
+        <h1 style="color: white; font-size: 20px; margin-bottom: 8px;">Commande confirmée ✅</h1>
+        <p style="color: #a3a3a3; font-size: 14px;">Commande n°{{ order.id }} — merci pour ton achat !</p>
+
+        <div style="margin: 24px 0; border-top: 1px solid #262626; border-bottom: 1px solid #262626; padding: 16px 0;">
+            {% for item in order.orderItems %}
+                <div style="display: flex; justify-content: space-between; color: #d4d4d4; font-size: 13px; padding: 6px 0;">
+                    <span>{{ item.product.name }}{% if item.selectedColor %} ({{ item.selectedColor }}){% endif %} × {{ item.quantity }}</span>
+                    <span>{{ ((item.unitPrice * item.quantity) / 100)|number_format(0, ',', ' ') }} XOF</span>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div style="display: flex; justify-content: space-between; color: white; font-weight: 600; font-size: 16px; margin-bottom: 24px;">
+            <span>Total</span>
+            <span>{{ (order.total / 100)|number_format(0, ',', ' ') }} XOF</span>
+        </div>
+
+        <p style="color: #737373; font-size: 12px; line-height: 1.6;">
+            Livraison à : {{ order.deliveryAddress }}<br>
+            Téléphone : {{ order.deliveryPhone }}
+        </p>
+
+        <p style="color: #525252; font-size: 12px; margin-top: 24px;">— L'équipe TechLink</p>
+    </div>
+</div>

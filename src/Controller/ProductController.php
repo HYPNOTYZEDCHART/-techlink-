@@ -11,6 +11,8 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use App\Service\ReviewManager;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 final class ProductController extends AbstractController
 {
@@ -63,12 +65,19 @@ if ($search) {
     }
 
     #[Route('/produit/{slug}', name: 'app_product_show')]
-    public function show(#[MapEntity(mapping: ['slug' => 'slug'])] Product $product): Response
-    {
-        return $this->render('product/show.html.twig', [
-            'product' => $product,
-        ]);
-    }
+public function show(#[MapEntity(mapping: ['slug' => 'slug'])] Product $product, \App\Service\WishlistManager $wishlistManager, ReviewManager $reviewManager): Response
+{
+    $isInWishlist = $this->getUser() ? $wishlistManager->isInWishlist($this->getUser(), $product) : false;
+    $canReview = $this->getUser() ? !$reviewManager->hasAlreadyReviewed($this->getUser(), $product) : false;
+    $averageRating = $reviewManager->getAverageRating($product);
+
+    return $this->render('product/show.html.twig', [
+        'product' => $product,
+        'isInWishlist' => $isInWishlist,
+        'canReview' => $canReview,
+        'averageRating' => $averageRating,
+    ]);
+}
 
     #[Route('/api/recherche-produits', name: 'app_api_product_search')]
     public function searchApi(Request $request, ProductRepository $productRepository): JsonResponse
@@ -91,4 +100,23 @@ if ($search) {
 
         return $this->json($results);
     }
+
+    #[Route('/produit/{slug}/avis', name: 'app_product_review', methods: ['POST'])]
+#[IsGranted('ROLE_USER')]
+public function addReview(#[MapEntity(mapping: ['slug' => 'slug'])] Product $product, Request $request, ReviewManager $reviewManager): Response
+{
+    if ($reviewManager->hasAlreadyReviewed($this->getUser(), $product)) {
+        $this->addFlash('error', 'Tu as déjà laissé un avis sur ce produit.');
+        return $this->redirectToRoute('app_product_show', ['slug' => $product->getSlug()]);
+    }
+
+    $rating = (int) $request->request->get('rating', 5);
+    $comment = $request->request->get('comment', '');
+
+    $reviewManager->addReview($this->getUser(), $product, $rating, $comment);
+
+    $this->addFlash('success', 'Merci pour ton avis !');
+
+    return $this->redirectToRoute('app_product_show', ['slug' => $product->getSlug()]);
+}
 }

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Helvetica, sans-serif; color: #1a1a1a; font-size: 13px; }
+        .header { display: flex; justify-content: space-between; margin-bottom: 40px; }
+        .logo { font-size: 24px; font-weight: bold; }
+        .logo span { color: #f97316; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { text-align: left; border-bottom: 2px solid #1a1a1a; padding: 8px 4px; font-size: 12px; }
+        td { padding: 8px 4px; border-bottom: 1px solid #e5e5e5; }
+        .total-row { font-weight: bold; font-size: 16px; }
+        .info { margin-bottom: 4px; color: #525252; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <p class="logo">&lt;/tech<span>link</span>&gt;</p>
+            <p class="info">Point E, Dakar, Sénégal</p>
+        </div>
+        <div style="text-align: right;">
+            <p style="font-size: 18px; font-weight: bold;">Facture n°{{ order.id }}</p>
+            <p class="info">{{ order.createdAt|date('d/m/Y') }}</p>
+        </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+        <p class="info"><strong>Client :</strong> {{ order.user.firstName }} {{ order.user.lastName }}</p>
+        <p class="info"><strong>Email :</strong> {{ order.user.email }}</p>
+        <p class="info"><strong>Livraison :</strong> {{ order.deliveryAddress }} — {{ order.deliveryPhone }}</p>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Produit</th>
+                <th>Quantité</th>
+                <th>Prix unitaire</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order.orderItems %}
+                <tr>
+                    <td>{{ item.product.name }}{% if item.selectedColor %} ({{ item.selectedColor }}){% endif %}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ (item.unitPrice / 100)|number_format(0, ',', ' ') }} XOF</td>
+                    <td>{{ ((item.unitPrice * item.quantity) / 100)|number_format(0, ',', ' ') }} XOF</td>
+                </tr>
+            {% endfor %}
+            <tr class="total-row">
+                <td colspan="3">Total</td>
+                <td>{{ (order.total / 100)|number_format(0, ',', ' ') }} XOF</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p style="margin-top: 60px; color: #a3a3a3; font-size: 11px;">Merci pour ta confiance — TechLink</p>
+</body>
+</html>

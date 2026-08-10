@@ -1,0 +1,35 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mes favoris — TechLink{% endblock %}
+
+{% block body %}
+    <section class="max-w-7xl mx-auto px-6 py-16">
+        <h1 class="text-3xl font-bold mb-8">Mes favoris</h1>
+
+        {% if items is empty %}
+            <div class="flex flex-col items-center justify-center py-24 text-center border border-neutral-800 rounded-2xl">
+                <div class="text-6xl mb-4">♡</div>
+                <p class="text-neutral-500 mb-6">Aucun produit dans tes favoris pour l'instant.</p>
+                <a href="{{ path('app_product_index') }}" class="bg-white text-black font-semibold px-6 py-3 rounded-full hover:bg-orange-500 transition">
+                    Voir le catalogue
+                </a>
+            </div>
+        {% else %}
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                {% for item in items %}
+                    {% set product = item.product %}
+                    <a href="{{ path('app_product_show', {slug: product.slug}) }}" class="border border-neutral-800 rounded-2xl p-4 hover:border-orange-500 transition block">
+                        {% if product.imageFilename %}
+                            <img src="{{ asset('images/products/' ~ product.imageFilename) }}" alt="{{ product.name }}" class="rounded-xl h-40 w-full object-cover mb-4">
+                        {% else %}
+                            <div class="bg-neutral-900 rounded-xl h-40 mb-4"></div>
+                        {% endif %}
+                        <p class="text-xs text-neutral-500">{{ product.brand }}</p>
+                        <p class="font-semibold">{{ product.name }}</p>
+                        <p class="text-orange-500 font-bold mt-2">{{ (product.price / 100)|number_format(0, ',', ' ') }} XOF</p>
+                    </a>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </section>
+{% endblock %}

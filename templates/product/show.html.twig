@@ -10,52 +10,73 @@
         </div>
     </div>
 {% endfor %}
+{% for message in app.flashes('error') %}
+    <div class="max-w-7xl mx-auto px-6 pt-6">
+        <div class="bg-red-500/10 border border-red-500 text-red-500 text-sm rounded-xl px-4 py-3">
+            {{ message }}
+        </div>
+    </div>
+{% endfor %}
+
     <section class="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-2 gap-12">
         <div class="self-start" data-controller="product-gallery">
-    {% if product.imageFilename %}
-        <div class="overflow-hidden rounded-2xl bg-neutral-900 mb-4">
-            <img
-                data-product-gallery-target="mainImage"
-                src="{{ asset('images/products/' ~ product.imageFilename) }}"
-                alt="{{ product.name }}"
-                class="h-96 w-full object-cover opacity-0"
-                onload="this.classList.remove('opacity-0')"
-            >
-        </div>
-    {% else %}
-        <div class="bg-neutral-900 rounded-2xl h-96 animate-pulse mb-4"></div>
-    {% endif %}
-
-    {% if product.productImages|length > 0 %}
-        <div class="flex gap-3">
             {% if product.imageFilename %}
-                <button
-                    type="button"
-                    data-action="click->product-gallery#change"
-                    data-image="{{ asset('images/products/' ~ product.imageFilename) }}"
-                    class="w-16 h-16 rounded-lg overflow-hidden border-2 border-orange-500 flex-shrink-0"
-                >
-                    <img src="{{ asset('images/products/' ~ product.imageFilename) }}" class="w-full h-full object-cover">
-                </button>
+                <div class="overflow-hidden rounded-2xl bg-neutral-900 mb-4">
+                    <img
+                        data-product-gallery-target="mainImage"
+                        src="{{ asset('images/products/' ~ product.imageFilename) }}"
+                        alt="{{ product.name }}"
+                        class="h-96 w-full object-cover opacity-0"
+                        onload="this.classList.remove('opacity-0')"
+                    >
+                </div>
+            {% else %}
+                <div class="bg-neutral-900 rounded-2xl h-96 animate-pulse mb-4"></div>
             {% endif %}
-            {% for image in product.productImages|sort((a, b) => a.position <=> b.position) %}
-                <button
-                    type="button"
-                    data-action="click->product-gallery#change"
-                    data-image="{{ asset('images/products/' ~ image.filename) }}"
-                    class="w-16 h-16 rounded-lg overflow-hidden border-2 border-transparent hover:border-orange-500 flex-shrink-0 transition"
-                >
-                    <img src="{{ asset('images/products/' ~ image.filename) }}" class="w-full h-full object-cover">
-                </button>
-            {% endfor %}
+
+            {% if product.productImages|length > 0 %}
+                <div class="flex gap-3">
+                    {% if product.imageFilename %}
+                        <button
+                            type="button"
+                            data-action="click->product-gallery#change"
+                            data-image="{{ asset('images/products/' ~ product.imageFilename) }}"
+                            class="w-16 h-16 rounded-lg overflow-hidden border-2 border-orange-500 flex-shrink-0"
+                        >
+                            <img src="{{ asset('images/products/' ~ product.imageFilename) }}" class="w-full h-full object-cover">
+                        </button>
+                    {% endif %}
+                    {% for image in product.productImages|sort((a, b) => a.position <=> b.position) %}
+                        <button
+                            type="button"
+                            data-action="click->product-gallery#change"
+                            data-image="{{ asset('images/products/' ~ image.filename) }}"
+                            class="w-16 h-16 rounded-lg overflow-hidden border-2 border-transparent hover:border-orange-500 flex-shrink-0 transition"
+                        >
+                            <img src="{{ asset('images/products/' ~ image.filename) }}" class="w-full h-full object-cover">
+                        </button>
+                    {% endfor %}
+                </div>
+            {% endif %}
         </div>
-    {% endif %}
-</div>
 
         <div>
             <p class="text-neutral-500 text-sm mb-2">{{ product.brand }}</p>
             <h1 class="text-3xl font-bold mb-4">{{ product.name }}</h1>
             <p class="text-orange-500 text-3xl font-bold mb-6">{{ (product.price / 100)|number_format(0, ',', ' ') }} XOF</p>
+
+            {% if app.user %}
+                <button
+                    type="button"
+                    data-controller="wishlist-toggle"
+                    data-wishlist-toggle-url-value="{{ path('app_wishlist_toggle', {id: product.id}) }}"
+                    data-action="click->wishlist-toggle#toggle"
+                    class="mb-6 flex items-center gap-2 text-sm text-neutral-400 hover:text-orange-500 transition"
+                >
+                    <span data-wishlist-toggle-target="icon" class="text-xl {{ isInWishlist ? 'text-orange-500' : '' }}">{{ isInWishlist ? '♥' : '♡' }}</span>
+                    Ajouter aux favoris
+                </button>
+            {% endif %}
 
             <p class="text-neutral-400 mb-8">{{ product.description }}</p>
 
@@ -75,14 +96,14 @@
 
             {% if app.user %}
                 <form method="post" action="{{ path('app_cart_add', {id: product.id}) }}" data-controller="add-to-cart-toast">
-                <div class="mb-6">
-    <p class="text-sm text-neutral-400 mb-3">Quantité</p>
-    <div class="flex items-center gap-3 w-fit border border-neutral-700 rounded-full px-2 py-1">
-        <button type="button" onclick="this.nextElementSibling.stepDown()" class="w-8 h-8 flex items-center justify-center hover:text-orange-500 transition text-lg">−</button>
-        <input type="number" name="quantity" value="1" min="1" max="{{ product.stock }}" class="w-12 text-center bg-transparent focus:outline-none">
-        <button type="button" onclick="this.previousElementSibling.stepUp()" class="w-8 h-8 flex items-center justify-center hover:text-orange-500 transition text-lg">+</button>
-    </div>
-</div>
+                    <div class="mb-6">
+                        <p class="text-sm text-neutral-400 mb-3">Quantité</p>
+                        <div class="flex items-center gap-3 w-fit border border-neutral-700 rounded-full px-2 py-1">
+                            <button type="button" onclick="this.nextElementSibling.stepDown()" class="w-8 h-8 flex items-center justify-center hover:text-orange-500 transition text-lg">−</button>
+                            <input type="number" name="quantity" value="1" min="1" max="{{ product.stock }}" class="w-12 text-center bg-transparent focus:outline-none">
+                            <button type="button" onclick="this.previousElementSibling.stepUp()" class="w-8 h-8 flex items-center justify-center hover:text-orange-500 transition text-lg">+</button>
+                        </div>
+                    </div>
                     {% if product.colors %}
                         <div class="mb-6">
                             <p class="text-sm text-neutral-400 mb-3">Couleur</p>
@@ -117,6 +138,56 @@
                 </svg>
                 Commander via WhatsApp
             </a>
+        </div>
+    </section>
+
+    <section class="max-w-7xl mx-auto px-6 pb-16">
+        <h2 class="text-2xl font-bold mb-2">Avis clients</h2>
+        <p class="text-neutral-400 mb-8">
+            {% if averageRating > 0 %}
+                ⭐ {{ averageRating }}/5 — {{ product.reviews|length }} avis
+            {% else %}
+                Aucun avis pour l'instant
+            {% endif %}
+        </p>
+
+        {% if app.user and canReview %}
+            <form method="post" action="{{ path('app_product_review', {slug: product.slug}) }}" class="border border-neutral-800 rounded-2xl p-6 mb-8 flex flex-col gap-4">
+                <div>
+                    <p class="text-sm text-neutral-400 mb-2">Ta note</p>
+                    <div class="flex gap-2">
+                        {% for i in 1..5 %}
+                            <label for="rating-{{ i }}">
+                                <input type="radio" id="rating-{{ i }}" name="rating" value="{{ i }}" class="peer hidden" required>
+                                <span class="text-2xl cursor-pointer grayscale peer-checked:grayscale-0 transition">⭐</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                <textarea name="comment" rows="3" required placeholder="Partage ton expérience avec ce produit..." class="w-full bg-neutral-900 border border-neutral-700 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-orange-500"></textarea>
+                <button type="submit" class="bg-white text-black font-semibold px-6 py-2.5 rounded-full hover:bg-orange-500 transition w-fit">
+                    Publier mon avis
+                </button>
+            </form>
+        {% endif %}
+
+        <div class="flex flex-col gap-4">
+            {% for review in product.reviews %}
+                <div class="border border-neutral-800 rounded-2xl p-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="font-semibold">{{ review.user.firstName }}</p>
+                        <p class="text-orange-500">
+                            {% for i in 1..review.rating %}⭐{% endfor %}
+                        </p>
+                    </div>
+                    {% if review.isVerified %}
+                        <span class="text-xs text-green-500 bg-green-500/10 px-2 py-0.5 rounded-full">✔ Achat vérifié</span>
+                    {% endif %}
+                    <p class="text-neutral-400 text-sm mt-3">{{ review.comment }}</p>
+                </div>
+            {% else %}
+                <p class="text-neutral-500 text-sm">Sois le premier à laisser un avis sur ce produit.</p>
+            {% endfor %}
         </div>
     </section>
 {% endblock %}

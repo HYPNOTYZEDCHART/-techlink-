@@ -1,0 +1,8 @@
+:root {
+    --ea-brand-color: #f97316 !important;
+    --ea-link-color: #f97316 !important;
+}
+
+.card {
+    border-radius: 16px !important;
+}

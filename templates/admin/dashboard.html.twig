@@ -1,24 +1,93 @@
 {% extends '@EasyAdmin/page/content.html.twig' %}
 
-{% block content_title %}Tableau de bord{% endblock %}
+{% block content_title %}
+  Tableau de bord
+{% endblock %}
 
 {% block main %}
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <div style="background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 24px;">
-            <p style="color: #999; font-size: 13px; margin-bottom: 8px;">Produits</p>
-            <p style="color: white; font-size: 28px; font-weight: bold;">{{ productCount }}</p>
-        </div>
-        <div style="background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 24px;">
-            <p style="color: #999; font-size: 13px; margin-bottom: 8px;">Catégories</p>
-            <p style="color: white; font-size: 28px; font-weight: bold;">{{ categoryCount }}</p>
-        </div>
-        <div style="background: #1a1a1a; border: 1px solid #f97316; border-radius: 12px; padding: 24px;">
-            <p style="color: #999; font-size: 13px; margin-bottom: 8px;">Commandes en attente</p>
-            <p style="color: #f97316; font-size: 28px; font-weight: bold;">{{ pendingOrdersCount }}</p>
-        </div>
-        <div style="background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 24px;">
-            <p style="color: #999; font-size: 13px; margin-bottom: 8px;">Chiffre d'affaires</p>
-            <p style="color: white; font-size: 28px; font-weight: bold;">{{ (totalRevenue / 100)|number_format(0, ',', ' ') }} XOF</p>
-        </div>
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+    <div
+      style="background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 24px;"
+    >
+      <p style="color: #999; font-size: 13px; margin-bottom: 8px;">
+        Produits
+      </p>
+      <p style="color: white; font-size: 28px; font-weight: bold;">
+        {{ productCount }}
+      </p>
     </div>
+    <div
+      style="background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 24px;"
+    >
+      <p style="color: #999; font-size: 13px; margin-bottom: 8px;">
+        Catégories
+      </p>
+      <p style="color: white; font-size: 28px; font-weight: bold;">
+        {{ categoryCount }}
+      </p>
+    </div>
+    <div
+      style="background: #1a1a1a; border: 1px solid #f97316; border-radius: 12px; padding: 24px;"
+    >
+      <p style="color: #999; font-size: 13px; margin-bottom: 8px;">
+        Commandes en attente
+      </p>
+      <p style="color: #f97316; font-size: 28px; font-weight: bold;">
+        {{ pendingOrdersCount }}
+      </p>
+    </div>
+    <div
+      style="background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 24px;"
+    >
+      <p style="color: #999; font-size: 13px; margin-bottom: 8px;">
+        Chiffre d'affaires
+      </p>
+      <p style="color: white; font-size: 28px; font-weight: bold;">
+        {{ (totalRevenue / 100)|number_format(0, ',', ' ') }} XOF
+      </p>
+    </div>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"
+    ></script>
+
+    <div
+      style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-top: 24px;"
+    >
+      <div
+        style="background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 24px;"
+      >
+        <p style="color: #999; font-size: 13px; margin-bottom: 16px;">
+          Chiffre d'affaires — 7 derniers jours
+        </p>
+        <canvas id="revenueChart" height="80"></canvas>
+      </div>
+      <div
+        style="background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 24px;"
+      >
+        <p style="color: #999; font-size: 13px; margin-bottom: 16px;">
+          Commandes par statut
+        </p>
+        <canvas id="statusChart" height="80"></canvas>
+      </div>
+    </div>
+
+    <script>
+      const revenueCtx = document.getElementById('revenueChart'); new
+      Chart(revenueCtx, { type: 'line', data: { labels: {{
+        revenueLast7Days|keys|json_encode|raw
+      }}, datasets: [{ label: 'XOF', data: {{
+        revenueLast7Days|json_encode|raw
+      }}, borderColor: '#f97316', backgroundColor: 'rgba(249, 115, 22, 0.1)',
+      fill: true, tension: 0.3, }] }, options: { plugins: { legend: { display:
+      false } }, scales: { x: { ticks: { color: '#999' }, grid: { color: '#333'
+      } }, y: { ticks: { color: '#999' }, grid: { color: '#333' } } } } });
+
+      const statusCtx = document.getElementById('statusChart'); new
+      Chart(statusCtx, { type: 'doughnut', data: { labels: {{
+        statusBreakdown|keys|json_encode|raw
+      }}, datasets: [{ data: {{ statusBreakdown|json_encode|raw }},
+      backgroundColor: ['#f97316', '#3b82f6', '#a855f7', '#22c55e', '#ef4444'],
+      }] }, options: { plugins: { legend: { labels: { color: '#999' } } } } });
+    </script>
+  </div>
 {% endblock %}

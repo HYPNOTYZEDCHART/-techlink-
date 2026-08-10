@@ -1,0 +1,21 @@
+<div style="background: #0a0a0a; padding: 40px 20px; font-family: -apple-system, sans-serif;">
+    <div style="max-width: 480px; margin: 0 auto; background: #171717; border-radius: 16px; padding: 32px; border: 1px solid #262626;">
+        <h1 style="color: white; font-size: 20px; margin-bottom: 16px;">Bonjour,</h1>
+
+        <p style="color: #a3a3a3; font-size: 14px; line-height: 1.6;">
+            Tu as demandé à réinitialiser ton mot de passe sur TechLink. Clique sur le bouton ci-dessous pour choisir un nouveau mot de passe.
+        </p>
+
+        <div style="text-align: center; margin: 32px 0;">
+            <a href="{{ url('app_reset_password', {token: resetToken.token}) }}" style="background: white; color: black; text-decoration: none; padding: 12px 28px; border-radius: 999px; font-weight: 600; font-size: 14px; display: inline-block;">
+                Réinitialiser mon mot de passe
+            </a>
+        </div>
+
+        <p style="color: #737373; font-size: 12px; line-height: 1.6;">
+            Ce lien expire dans {{ resetToken.expirationMessageKey|trans(resetToken.expirationMessageData, 'ResetPasswordBundle') }}. Si tu n'es pas à l'origine de cette demande, ignore simplement cet email.
+        </p>
+
+        <p style="color: #525252; font-size: 12px; margin-top: 24px;">— L'équipe TechLink</p>
+    </div>
+</div>

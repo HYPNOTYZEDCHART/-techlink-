@@ -7,6 +7,8 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use App\Entity\Product;
+use App\Service\WishlistManager;
 
 final class AccountController extends AbstractController
 {
@@ -27,4 +29,24 @@ final class AccountController extends AbstractController
             'orders' => $orders,
         ]);
     }
+
+    #[Route('/mes-favoris', name: 'app_wishlist')]
+#[IsGranted('ROLE_USER')]
+public function wishlist(WishlistManager $wishlistManager): Response
+{
+    $items = $wishlistManager->getItems($this->getUser());
+
+    return $this->render('account/wishlist.html.twig', [
+        'items' => $items,
+    ]);
+}
+
+#[Route('/favoris/toggle/{id}', name: 'app_wishlist_toggle', methods: ['POST'])]
+#[IsGranted('ROLE_USER')]
+public function toggleWishlist(Product $product, WishlistManager $wishlistManager): Response
+{
+    $added = $wishlistManager->toggle($this->getUser(), $product);
+
+    return $this->json(['added' => $added]);
+}
 }
