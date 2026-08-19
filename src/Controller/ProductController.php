@@ -13,6 +13,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use App\Service\ReviewManager;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use App\Entity\Review;
 
 final class ProductController extends AbstractController
 {
@@ -65,20 +66,30 @@ if ($search) {
     }
 
     #[Route('/produit/{slug}', name: 'app_product_show')]
-public function show(#[MapEntity(mapping: ['slug' => 'slug'])] Product $product, \App\Service\WishlistManager $wishlistManager, ReviewManager $reviewManager): Response
+public function show(#[MapEntity(mapping: ['slug' => 'slug'])] Product $product, Request $request, \App\Service\WishlistManager $wishlistManager, ReviewManager $reviewManager): Response
 {
     $isInWishlist = $this->getUser() ? $wishlistManager->isInWishlist($this->getUser(), $product) : false;
     $canReview = $this->getUser() ? !$reviewManager->hasAlreadyReviewed($this->getUser(), $product) : false;
     $averageRating = $reviewManager->getAverageRating($product);
+
+    $reviewsPage = max(1, (int) $request->query->get('avis_page', 1));
+    $reviewsPerPage = 5;
+    $allReviews = $product->getReviews();
+    $totalReviews = count($allReviews);
+    $totalReviewPages = (int) ceil($totalReviews / $reviewsPerPage);
+
+    $reviews = array_slice($allReviews->toArray(), ($reviewsPage - 1) * $reviewsPerPage, $reviewsPerPage);
 
     return $this->render('product/show.html.twig', [
         'product' => $product,
         'isInWishlist' => $isInWishlist,
         'canReview' => $canReview,
         'averageRating' => $averageRating,
+        'reviews' => $reviews,
+        'reviewsPage' => $reviewsPage,
+        'totalReviewPages' => $totalReviewPages,
     ]);
 }
-
     #[Route('/api/recherche-produits', name: 'app_api_product_search')]
     public function searchApi(Request $request, ProductRepository $productRepository): JsonResponse
     {
@@ -118,5 +129,17 @@ public function addReview(#[MapEntity(mapping: ['slug' => 'slug'])] Product $pro
     $this->addFlash('success', 'Merci pour ton avis !');
 
     return $this->redirectToRoute('app_product_show', ['slug' => $product->getSlug()]);
+}
+
+     #[Route('/avis/{id}/supprimer', name: 'app_review_delete', methods: ['POST'])]
+#[IsGranted('ROLE_USER')]
+public function deleteReview(Review $review, ReviewManager $reviewManager): Response
+{
+    $slug = $review->getProduct()->getSlug();
+    $reviewManager->deleteReview($this->getUser(), $review);
+
+    $this->addFlash('success', 'Ton avis a été supprimé.');
+
+    return $this->redirectToRoute('app_product_show', ['slug' => $slug]);
 }
 }

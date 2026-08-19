@@ -77,11 +77,18 @@ class Product
     #[ORM\OneToMany(targetEntity: Review::class, mappedBy: 'product', orphanRemoval: true)]
     private Collection $reviews;
 
+    /**
+     * @var Collection<int, ProductColor>
+     */
+    #[ORM\OneToMany(targetEntity: ProductColor::class, mappedBy: 'product', orphanRemoval: true)]
+    private Collection $productColors;
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
         $this->productImages = new ArrayCollection();
         $this->reviews = new ArrayCollection();
+        $this->productColors = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -330,6 +337,36 @@ class Product
             // set the owning side to null (unless already changed)
             if ($review->getProduct() === $this) {
                 $review->setProduct(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ProductColor>
+     */
+    public function getProductColors(): Collection
+    {
+        return $this->productColors;
+    }
+
+    public function addProductColor(ProductColor $productColor): static
+    {
+        if (!$this->productColors->contains($productColor)) {
+            $this->productColors->add($productColor);
+            $productColor->setProduct($this);
+        }
+
+        return $this;
+    }
+
+    public function removeProductColor(ProductColor $productColor): static
+    {
+        if ($this->productColors->removeElement($productColor)) {
+            // set the owning side to null (unless already changed)
+            if ($productColor->getProduct() === $this) {
+                $productColor->setProduct(null);
             }
         }
 

@@ -34,6 +34,12 @@ final class CartController extends AbstractController
 {
     $color = $request->request->get('color');
     $quantity = max(1, (int) $request->request->get('quantity', 1));
+
+    if ($quantity > $product->getStock()) {
+        $this->addFlash('error', 'Stock insuffisant : il ne reste que ' . $product->getStock() . ' unité(s).');
+        return $this->redirectToRoute('app_product_show', ['slug' => $product->getSlug()]);
+    }
+
     $cartManager->addProduct($this->getUser(), $product, $quantity, $color);
 
         $this->addFlash('success', $product->getName() . ' ajouté au panier');

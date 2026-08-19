@@ -19,6 +19,7 @@ class CartManager
         private EntityManagerInterface $entityManager,
         private CartItemRepository $cartItemRepository,
         private MailerInterface $mailer,
+        private string $senderEmail,
     ) {
     }
 
@@ -29,6 +30,11 @@ class CartManager
             'product' => $product,
             'selectedColor' => $selectedColor,
         ]);
+
+        $currentQuantity = $existingItem ? $existingItem->getQuantity() : 0;
+        if ($currentQuantity + $quantity > $product->getStock()) {
+            throw new \LogicException('Stock insuffisant pour ce produit.');
+        }
 
         if ($existingItem) {
             $existingItem->setQuantity($existingItem->getQuantity() + $quantity);
@@ -56,6 +62,10 @@ class CartManager
         if ($quantity <= 0) {
             $this->removeItem($cartItem);
             return;
+        }
+
+        if ($quantity > $cartItem->getProduct()->getStock()) {
+            throw new \LogicException('Stock insuffisant.');
         }
 
         $cartItem->setQuantity($quantity);
@@ -90,11 +100,24 @@ class CartManager
     }
 
     public function checkout(User $user, string $deliveryAddress, string $deliveryPhone): CustomerOrder
-    {
-        $items = $this->getItems($user);
+{
+    $items = $this->getItems($user);
 
-        if (empty($items)) {
-            throw new \LogicException('Le panier est vide.');
+    if (empty($items)) {
+        throw new \LogicException('Le panier est vide.');
+    }
+
+    $this->entityManager->beginTransaction();
+
+    try {
+        // Vérification finale du stock (au cas où il aurait changé depuis l'ajout au panier)
+        foreach ($items as $cartItem) {
+            $product = $cartItem->getProduct();
+            if ($cartItem->getQuantity() > $product->getStock()) {
+                throw new \RuntimeException(
+                    'Stock insuffisant pour "' . $product->getName() . '" (il en reste ' . $product->getStock() . ').'
+                );
+            }
         }
 
         $order = new CustomerOrder();
@@ -108,28 +131,43 @@ class CartManager
         $this->entityManager->persist($order);
 
         foreach ($items as $cartItem) {
-    $orderItem = new OrderItem();
-    $orderItem->setProduct($cartItem->getProduct());
-    $orderItem->setQuantity($cartItem->getQuantity());
-    $orderItem->setUnitPrice($cartItem->getProduct()->getPrice());
-    $orderItem->setSelectedColor($cartItem->getSelectedColor());
+            $product = $cartItem->getProduct();
 
-    $order->addOrderItem($orderItem);
-    $this->entityManager->persist($orderItem);
-    $this->entityManager->remove($cartItem);
-}
+            $orderItem = new OrderItem();
+            $orderItem->setProduct($product);
+            $orderItem->setQuantity($cartItem->getQuantity());
+            $orderItem->setUnitPrice($product->getPrice());
+            $orderItem->setSelectedColor($cartItem->getSelectedColor());
+
+            $order->addOrderItem($orderItem);
+            $this->entityManager->persist($orderItem);
+
+            // Décrémentation du stock
+            $product->setStock($product->getStock() - $cartItem->getQuantity());
+
+            $this->entityManager->remove($cartItem);
+        }
 
         $this->entityManager->flush();
-
-        $this->sendOrderConfirmationEmail($order);
-
-        return $order;
+        $this->entityManager->commit();
+    } catch (\Throwable $e) {
+        $this->entityManager->rollback();
+        throw $e;
     }
+
+    try {
+        $this->sendOrderConfirmationEmail($order);
+    } catch (\Throwable $e) {
+        // La commande est déjà validée en base ; on ne bloque pas si l'email échoue
+    }
+
+    return $order;
+}
 
     private function sendOrderConfirmationEmail(CustomerOrder $order): void
     {
         $email = (new TemplatedEmail())
-            ->from(new Address('doumbiabecaye7@gmail.com', 'TechLink'))
+            ->from(new Address($this->senderEmail, 'TechLink'))
             ->to((string) $order->getUser()->getEmail())
             ->subject('Confirmation de ta commande n°' . $order->getId())
             ->htmlTemplate('emails/order_confirmation.html.twig')

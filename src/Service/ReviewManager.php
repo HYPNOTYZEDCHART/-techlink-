@@ -19,19 +19,9 @@ class ReviewManager
     }
 
     public function hasPurchased(User $user, Product $product): bool
-    {
-        $orders = $this->orderRepository->findBy(['user' => $user, 'status' => 'delivered']);
-
-        foreach ($orders as $order) {
-            foreach ($order->getOrderItems() as $item) {
-                if ($item->getProduct() === $product) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
+{
+    return $this->orderRepository->hasUserPurchasedProduct($user, $product);
+}
 
     public function hasAlreadyReviewed(User $user, Product $product): bool
     {
@@ -69,4 +59,14 @@ class ReviewManager
 
         return round($total / count($reviews), 1);
     }
+
+        public function deleteReview(User $user, Review $review): void
+{
+    if ($review->getUser() !== $user) {
+        throw new \LogicException('Tu ne peux supprimer que tes propres avis.');
+    }
+
+    $this->entityManager->remove($review);
+    $this->entityManager->flush();
+}
 }

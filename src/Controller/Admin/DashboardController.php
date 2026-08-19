@@ -71,5 +71,6 @@ foreach ($rawStatusBreakdown as $status => $count) {
         yield MenuItem::linkTo(NewsletterSubscriberCrudController::class, 'Newsletter', 'fa fa-envelope');
         yield MenuItem::linkTo(ActivityLogCrudController::class, 'Logs d\'activité', 'fa fa-history');
         yield MenuItem::linkTo(UserCrudController::class, 'Utilisateurs', 'fa fa-users');
+        yield MenuItem::linkTo(ProductColorCrudController::class, 'Couleurs', 'fa fa-palette');
     }
 }

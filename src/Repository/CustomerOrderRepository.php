@@ -5,6 +5,8 @@ namespace App\Repository;
 use App\Entity\CustomerOrder;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use App\Entity\User;
+use App\Entity\Product;
 
 /**
  * @extends ServiceEntityRepository<CustomerOrder>
@@ -104,4 +106,22 @@ public function getStatusBreakdown(): array
             ->getQuery()
             ->getResult();
     }
+
+
+    public function hasUserPurchasedProduct(User $user, Product $product): bool
+{
+    $count = $this->createQueryBuilder('o')
+        ->select('COUNT(oi.id)')
+        ->join('o.orderItems', 'oi')
+        ->andWhere('o.user = :user')
+        ->andWhere('o.status = :status')
+        ->andWhere('oi.product = :product')
+        ->setParameter('user', $user)
+        ->setParameter('status', 'delivered')
+        ->setParameter('product', $product)
+        ->getQuery()
+        ->getSingleScalarResult();
+
+    return $count > 0;
+}
 }
