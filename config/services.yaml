@@ -13,3 +13,7 @@ services:
     App\Service\CartManager:
         arguments:
             $senderEmail: '%env(MAILER_FROM)%'
+
+    App\EventListener\OrderStatusListener:
+        arguments:
+            $senderEmail: '%env(MAILER_FROM)%'        

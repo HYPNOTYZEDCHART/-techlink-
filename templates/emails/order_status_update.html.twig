@@ -1,0 +1,23 @@
+<div style="background: #0a0a0a; padding: 40px 20px; font-family: -apple-system, sans-serif;">
+    <div style="max-width: 480px; margin: 0 auto; background: #171717; border-radius: 16px; padding: 32px; border: 1px solid #262626;">
+        <h1 style="color: white; font-size: 20px; margin-bottom: 8px;">Mise à jour de ta commande</h1>
+        <p style="color: #a3a3a3; font-size: 14px;">Commande n°{{ order.id }}</p>
+
+        <div style="margin: 24px 0; text-align: center;">
+            <span style="display: inline-block; background: #f97316; color: black; font-weight: 600; padding: 10px 24px; border-radius: 999px; font-size: 14px;">
+                {{ statusLabel }}
+            </span>
+        </div>
+
+        <p style="color: #a3a3a3; font-size: 13px; line-height: 1.6;">
+            Le statut de ta commande vient d'être mis à jour. Tu peux suivre son évolution à tout moment depuis ton espace "Mes commandes".
+        </p>
+
+        <p style="color: #737373; font-size: 12px; line-height: 1.6; margin-top: 20px;">
+            Livraison à : {{ order.deliveryAddress }}<br>
+            Téléphone : {{ order.deliveryPhone }}
+        </p>
+
+        <p style="color: #525252; font-size: 12px; margin-top: 24px;">— L'équipe TechLink</p>
+    </div>
+</div>
