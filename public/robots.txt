@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /panier
+Disallow: /mon-compte
+Disallow: /commande
+Disallow: /admin
+
+# ⚠️ Remplacer par votre domaine de production avant déploiement
+Sitemap: https://VOTRE_DOMAINE.com/sitemap.xml

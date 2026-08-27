@@ -12,6 +12,8 @@ use App\Entity\OrderItem;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
+use Symfony\Component\HttpFoundation\RequestStack;
+use App\Repository\ProductColorRepository;
 
 class CartManager
 {
@@ -20,27 +22,52 @@ class CartManager
         private CartItemRepository $cartItemRepository,
         private MailerInterface $mailer,
         private string $senderEmail,
+        private RequestStack $requestStack,
+        private ProductColorRepository $productColorRepository,
     ) {
     }
 
-    public function addProduct(User $user, Product $product, int $quantity = 1, ?string $selectedColor = null): void
+    public function addProduct(?User $user, Product $product, int $quantity = 1, ?string $selectedColor = null): void
     {
-        $existingItem = $this->cartItemRepository->findOneBy([
-            'user' => $user,
-            'product' => $product,
-            'selectedColor' => $selectedColor,
-        ]);
+        $sessionId = null;
+        if (!$user) {
+            $session = $this->requestStack->getSession();
+            if (!$session->isStarted()) {
+                $session->start();
+            }
+            // Forcer Symfony à sauvegarder la session et envoyer le cookie PHPSESSID
+            $session->set('_cart_initialized', true);
+            $sessionId = $session->getId();
+        }
+
+        $criteria = ['product' => $product, 'selectedColor' => $selectedColor];
+        if ($user) {
+            $criteria['user'] = $user;
+        } else {
+            $criteria['sessionId'] = $sessionId;
+        }
+
+        $existingItem = $this->cartItemRepository->findOneBy($criteria);
 
         $currentQuantity = $existingItem ? $existingItem->getQuantity() : 0;
-        if ($currentQuantity + $quantity > $product->getStock()) {
-            throw new \LogicException('Stock insuffisant pour ce produit.');
+        $totalQuantity = $currentQuantity + $quantity;
+
+        // Check color stock if applicable
+        if ($selectedColor) {
+            $colorEntity = $this->productColorRepository->findOneBy(['product' => $product, 'name' => $selectedColor]);
+            if ($colorEntity && $totalQuantity > $colorEntity->getStock()) {
+                throw new \LogicException('Stock insuffisant pour cette couleur (il en reste ' . $colorEntity->getStock() . ').');
+            }
+        } elseif ($totalQuantity > $product->getStock()) {
+            throw new \LogicException('Stock insuffisant pour ce produit (il en reste ' . $product->getStock() . ').');
         }
 
         if ($existingItem) {
-            $existingItem->setQuantity($existingItem->getQuantity() + $quantity);
+            $existingItem->setQuantity($totalQuantity);
         } else {
             $cartItem = new CartItem();
             $cartItem->setUser($user);
+            $cartItem->setSessionId($sessionId);
             $cartItem->setProduct($product);
             $cartItem->setQuantity($quantity);
             $cartItem->setSelectedColor($selectedColor);
@@ -72,12 +99,23 @@ class CartManager
         $this->entityManager->flush();
     }
 
-    public function getItems(User $user): array
+    public function getItems(?User $user): array
     {
-        return $this->cartItemRepository->findBy(['user' => $user]);
+        if ($user) {
+            return $this->cartItemRepository->findBy(['user' => $user]);
+        }
+        
+        $session = $this->requestStack->getSession();
+        $sessionId = $session->getId();
+        
+        if (!$sessionId) {
+            return [];
+        }
+        
+        return $this->cartItemRepository->findBy(['sessionId' => $sessionId]);
     }
 
-    public function getTotalItemCount(User $user): int
+    public function getTotalItemCount(?User $user): int
     {
         $items = $this->getItems($user);
         $count = 0;
@@ -88,7 +126,7 @@ class CartManager
         return $count;
     }
 
-    public function getTotalPrice(User $user): int
+    public function getTotalPrice(?User $user): int
     {
         $items = $this->getItems($user);
         $total = 0;
@@ -99,61 +137,84 @@ class CartManager
         return $total;
     }
 
-    public function checkout(User $user, string $deliveryAddress, string $deliveryPhone): CustomerOrder
-{
-    $items = $this->getItems($user);
+    public function checkout(?User $user, string $deliveryAddress, string $deliveryPhone, ?string $guestEmail = null, ?string $guestFirstName = null, ?string $guestLastName = null, int $deliveryFee = 0): CustomerOrder
+    {
+        $items = $this->getItems($user);
 
-    if (empty($items)) {
-        throw new \LogicException('Le panier est vide.');
-    }
+        if (empty($items)) {
+            throw new \LogicException('Le panier est vide.');
+        }
 
-    $this->entityManager->beginTransaction();
+        $this->entityManager->beginTransaction();
 
-    try {
-        // Vérification finale du stock (au cas où il aurait changé depuis l'ajout au panier)
-        foreach ($items as $cartItem) {
-            $product = $cartItem->getProduct();
-            if ($cartItem->getQuantity() > $product->getStock()) {
-                throw new \RuntimeException(
-                    'Stock insuffisant pour "' . $product->getName() . '" (il en reste ' . $product->getStock() . ').'
-                );
+        try {
+            foreach ($items as $cartItem) {
+                $product = $cartItem->getProduct();
+                $colorName = $cartItem->getSelectedColor();
+                
+                if ($colorName) {
+                    $colorEntity = $this->productColorRepository->findOneBy(['product' => $product, 'name' => $colorName]);
+                    if ($colorEntity && $cartItem->getQuantity() > $colorEntity->getStock()) {
+                        throw new \RuntimeException('Stock insuffisant pour "' . $product->getName() . '" en ' . $colorName . ' (il en reste ' . $colorEntity->getStock() . ').');
+                    }
+                } elseif ($cartItem->getQuantity() > $product->getStock()) {
+                    throw new \RuntimeException('Stock insuffisant pour "' . $product->getName() . '" (il en reste ' . $product->getStock() . ').');
+                }
             }
+
+            $order = new CustomerOrder();
+            $order->setUser($user);
+            if (!$user) {
+                $session = $this->requestStack->getSession();
+                if ($session->isStarted()) {
+                    $order->setSessionId($session->getId());
+                }
+                $order->setGuestEmail($guestEmail);
+                $order->setGuestFirstName($guestFirstName);
+                $order->setGuestLastName($guestLastName);
+            }
+
+            $order->setStatus('pending');
+            $order->setTotal($this->getTotalPrice($user) + $deliveryFee);
+            $order->setDeliveryFee($deliveryFee);
+            $order->setCreatedAt(new \DateTimeImmutable());
+            $order->setDeliveryAddress($deliveryAddress);
+            $order->setDeliveryPhone($deliveryPhone);
+
+            $this->entityManager->persist($order);
+
+            foreach ($items as $cartItem) {
+                $product = $cartItem->getProduct();
+
+                $orderItem = new OrderItem();
+                $orderItem->setProduct($product);
+                $orderItem->setQuantity($cartItem->getQuantity());
+                $orderItem->setUnitPrice($product->getPrice());
+                $orderItem->setSelectedColor($cartItem->getSelectedColor());
+
+                $order->addOrderItem($orderItem);
+                $this->entityManager->persist($orderItem);
+
+                // Décrémentation du stock
+                $product->setStock($product->getStock() - $cartItem->getQuantity());
+                
+                $colorName = $cartItem->getSelectedColor();
+                if ($colorName) {
+                    $colorEntity = $this->productColorRepository->findOneBy(['product' => $product, 'name' => $colorName]);
+                    if ($colorEntity) {
+                        $colorEntity->setStock($colorEntity->getStock() - $cartItem->getQuantity());
+                    }
+                }
+
+                $this->entityManager->remove($cartItem);
+            }
+
+            $this->entityManager->flush();
+            $this->entityManager->commit();
+        } catch (\Throwable $e) {
+            $this->entityManager->rollback();
+            throw $e;
         }
-
-        $order = new CustomerOrder();
-        $order->setUser($user);
-        $order->setStatus('pending');
-        $order->setTotal($this->getTotalPrice($user));
-        $order->setCreatedAt(new \DateTimeImmutable());
-        $order->setDeliveryAddress($deliveryAddress);
-        $order->setDeliveryPhone($deliveryPhone);
-
-        $this->entityManager->persist($order);
-
-        foreach ($items as $cartItem) {
-            $product = $cartItem->getProduct();
-
-            $orderItem = new OrderItem();
-            $orderItem->setProduct($product);
-            $orderItem->setQuantity($cartItem->getQuantity());
-            $orderItem->setUnitPrice($product->getPrice());
-            $orderItem->setSelectedColor($cartItem->getSelectedColor());
-
-            $order->addOrderItem($orderItem);
-            $this->entityManager->persist($orderItem);
-
-            // Décrémentation du stock
-            $product->setStock($product->getStock() - $cartItem->getQuantity());
-
-            $this->entityManager->remove($cartItem);
-        }
-
-        $this->entityManager->flush();
-        $this->entityManager->commit();
-    } catch (\Throwable $e) {
-        $this->entityManager->rollback();
-        throw $e;
-    }
 
     try {
         $this->sendOrderConfirmationEmail($order);
@@ -166,9 +227,15 @@ class CartManager
 
     private function sendOrderConfirmationEmail(CustomerOrder $order): void
     {
+        $to = $order->getUser() ? $order->getUser()->getEmail() : $order->getGuestEmail();
+        
+        if (!$to) {
+            return; // No email to send to
+        }
+
         $email = (new TemplatedEmail())
             ->from(new Address($this->senderEmail, 'TechLink'))
-            ->to((string) $order->getUser()->getEmail())
+            ->to((string) $to)
             ->subject('Confirmation de ta commande n°' . $order->getId())
             ->htmlTemplate('emails/order_confirmation.html.twig')
             ->context([

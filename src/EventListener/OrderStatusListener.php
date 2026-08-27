@@ -38,6 +38,11 @@ class OrderStatusListener
 
     private function sendStatusEmail(CustomerOrder $order, string $newStatus): void
     {
+        $to = $order->getUser() ? $order->getUser()->getEmail() : $order->getGuestEmail();
+        if (!$to) {
+            return;
+        }
+
         $labels = [
             'pending' => 'En attente',
             'confirmed' => 'Confirmée',
@@ -48,7 +53,7 @@ class OrderStatusListener
 
         $email = (new TemplatedEmail())
             ->from(new Address($this->senderEmail, 'TechLink'))
-            ->to((string) $order->getUser()->getEmail())
+            ->to((string) $to)
             ->subject('Ta commande n°' . $order->getId() . ' est ' . strtolower($labels[$newStatus] ?? $newStatus))
             ->htmlTemplate('emails/order_status_update.html.twig')
             ->context([

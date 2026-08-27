@@ -66,6 +66,15 @@ class Product
     private ?string $colors = null;
 
     /**
+     * Spécifications techniques du produit (ex: ['RAM' => '16 Go', 'CPU' => 'Intel i7']).
+     * Stocké en JSON pour rester flexible selon le type de produit.
+     *
+     * @var array<string, string>
+     */
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private array $specifications = [];
+
+    /**
      * @var Collection<int, ProductImage>
      */
     #[ORM\OneToMany(targetEntity: ProductImage::class, mappedBy: 'product', orphanRemoval: true)]
@@ -274,6 +283,65 @@ class Product
     public function setColors(?string $colors): static
     {
         $this->colors = $colors;
+
+        return $this;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function getSpecifications(): array
+    {
+        return $this->specifications ?? [];
+    }
+
+    public function setSpecifications(array $specifications): static
+    {
+        $this->specifications = $specifications;
+
+        return $this;
+    }
+
+    /**
+     * Propriété virtuelle pour le formulaire EasyAdmin.
+     * Convertit le tableau JSON en texte multi-lignes "Clé: Valeur".
+     */
+    public function getSpecificationsRaw(): string
+    {
+        $lines = [];
+        foreach ($this->getSpecifications() as $key => $value) {
+            $lines[] = $key . ': ' . $value;
+        }
+        return implode("\n", $lines);
+    }
+
+    /**
+     * Propriété virtuelle pour le formulaire EasyAdmin.
+     * Convertit le texte multi-lignes "Clé: Valeur" en tableau JSON.
+     */
+    public function setSpecificationsRaw(?string $raw): static
+    {
+        if ($raw === null || trim($raw) === '') {
+            $this->specifications = [];
+            return $this;
+        }
+
+        $specs = [];
+        foreach (explode("\n", $raw) as $line) {
+            $line = trim($line);
+            if ($line === '') {
+                continue;
+            }
+            $pos = strpos($line, ':');
+            if ($pos !== false) {
+                $key = trim(substr($line, 0, $pos));
+                $value = trim(substr($line, $pos + 1));
+                if ($key !== '') {
+                    $specs[$key] = $value;
+                }
+            }
+        }
+        $this->specifications = $specs;
 
         return $this;
     }

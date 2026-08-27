@@ -18,16 +18,37 @@
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
                 {% for item in items %}
                     {% set product = item.product %}
-                    <a href="{{ path('app_product_show', {slug: product.slug}) }}" class="border border-neutral-800 rounded-2xl p-4 hover:border-orange-500 transition block">
-                        {% if product.imageFilename %}
-                            <img src="{{ asset('images/products/' ~ product.imageFilename) }}" alt="{{ product.name }}" class="rounded-xl h-40 w-full object-cover mb-4">
-                        {% else %}
-                            <div class="bg-neutral-900 rounded-xl h-40 mb-4"></div>
-                        {% endif %}
+                    <div class="relative border border-neutral-800 rounded-2xl p-4 hover:border-orange-500 transition block group">
+                        <button
+                            type="button"
+                            data-controller="wishlist-toggle"
+                            data-wishlist-toggle-url-value="{{ path('app_wishlist_toggle', {id: product.id}) }}"
+                            data-action="click->wishlist-toggle#toggle"
+                            class="absolute top-3 right-3 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-neutral-900/80 backdrop-blur-sm border border-neutral-700 hover:border-orange-500 transition"
+                        >
+                            <span data-wishlist-toggle-target="icon" class="text-lg text-orange-500 transition">
+                                ♥
+                            </span>
+                        </button>
+                        <a href="{{ path('app_product_show', {slug: product.slug}) }}" class="block">
+                            {% if product.imageFilename %}
+                                <div class="overflow-hidden rounded-xl mb-4 bg-neutral-900 image-zoom-hover">
+                                    <img
+                                        src="{{ asset('images/products/' ~ product.imageFilename) }}"
+                                        alt="{{ product.name }}"
+                                        loading="lazy"
+                                        class="h-40 w-full object-cover opacity-0 transition-opacity duration-300"
+                                        onload="this.classList.remove('opacity-0')"
+                                    >
+                                </div>
+                            {% else %}
+                                <div class="bg-neutral-900 rounded-xl h-40 mb-4"></div>
+                            {% endif %}
                         <p class="text-xs text-neutral-500">{{ product.brand }}</p>
                         <p class="font-semibold">{{ product.name }}</p>
-                        <p class="text-orange-500 font-bold mt-2">{{ (product.price / 100)|number_format(0, ',', ' ') }} XOF</p>
-                    </a>
+                        <p class="text-orange-500 font-bold mt-2">{{ product.price|number_format(0, ',', ' ') }} XOF</p>
+                        </a>
+                    </div>
                 {% endfor %}
             </div>
         {% endif %}

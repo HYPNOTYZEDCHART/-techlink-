@@ -3,6 +3,7 @@
 {% block title %}Mon panier — TechLink{% endblock %}
 
 {% block body %}
+    <!-- SessionID: {{ debug_session_id|default('null') }} -->
     <section class="max-w-4xl mx-auto px-6 py-12">
         <h1 class="text-3xl font-bold mb-8">Mon panier</h1>
 
@@ -36,10 +37,11 @@
     {% if item.selectedColor %}
         <p class="text-xs text-neutral-500">Couleur : {{ item.selectedColor }}</p>
     {% endif %}
-    <p class="text-orange-500 font-bold">{{ (item.product.price / 100)|number_format(0, ',', ' ') }} XOF</p>
+    <p class="text-orange-500 font-bold">{{ item.product.price|number_format(0, ',', ' ') }} XOF</p>
 </div>
 
                         <form method="post" action="{{ path('app_cart_update', {id: item.id}) }}" class="flex items-center gap-2">
+                            <input type="hidden" name="_token" value="{{ csrf_token('cart_update_' ~ item.id) }}">
                             <input
                                 type="number"
                                 name="quantity"
@@ -51,6 +53,7 @@
                         </form>
 
                         <form method="post" action="{{ path('app_cart_remove', {id: item.id}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('cart_remove_' ~ item.id) }}">
                             <button type="submit" class="text-red-500 hover:text-red-400 transition text-sm">Retirer</button>
                         </form>
                     </div>
@@ -59,7 +62,7 @@
 
             <div class="flex items-center justify-between border-t border-neutral-800 pt-6">
                 <p class="text-lg font-bold">Total</p>
-                <p class="text-2xl font-bold text-orange-500">{{ (total / 100)|number_format(0, ',', ' ') }} XOF</p>
+                <p class="text-2xl font-bold text-orange-500">{{ total|number_format(0, ',', ' ') }} XOF</p>
             </div>
 
             <a href="{{ path('app_cart_checkout') }}" class="mt-6 block text-center bg-white text-black font-semibold px-6 py-3 rounded-full hover:bg-orange-500 transition">

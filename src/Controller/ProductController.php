@@ -13,29 +13,36 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use App\Service\ReviewManager;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use App\Entity\Review;
+use App\Service\WishlistManager;
 
 final class ProductController extends AbstractController
 {
     #[Route('/produits', name: 'app_product_index')]
-    public function index(Request $request, ProductRepository $productRepository, CategoryRepository $categoryRepository): Response
+    public function index(Request $request, ProductRepository $productRepository, CategoryRepository $categoryRepository, WishlistManager $wishlistManager): Response
     {
-        $categorySlug = $request->query->get('categorie');
-        $brand = $request->query->get('marque');
+        $params = $request->query->all();
+        
+        $catParam = $params['categorie'] ?? [];
+        $categorySlugs = is_array($catParam) ? $catParam : [$catParam];
+        
+        $brandParam = $params['marque'] ?? [];
+        $brands = is_array($brandParam) ? $brandParam : [$brandParam];
+
         $search = $request->query->get('recherche');
-        $selectedCategory = null;
+        
+        $selectedCategories = [];
 
         $criteria = ['isActive' => true];
 
-        if ($categorySlug) {
-            $selectedCategory = $categoryRepository->findOneBy(['slug' => $categorySlug]);
-            if ($selectedCategory) {
-                $criteria['category'] = $selectedCategory;
+        if (!empty($categorySlugs)) {
+            $selectedCategories = $categoryRepository->findBy(['slug' => $categorySlugs]);
+            if (!empty($selectedCategories)) {
+                $criteria['category'] = $selectedCategories;
             }
         }
 
-        if ($brand) {
-            $criteria['brand'] = $brand;
+        if (!empty($brands)) {
+            $criteria['brand'] = $brands;
         }
          
 
@@ -53,15 +60,23 @@ if ($search) {
         $products = $paginator;
         $totalPages = (int) ceil(count($paginator) / 12);
 
+        $wishlistProductIds = [];
+        if ($this->getUser()) {
+            foreach ($wishlistManager->getItems($this->getUser()) as $item) {
+                $wishlistProductIds[] = $item->getProduct()->getId();
+            }
+        }
+
         return $this->render('product/list.html.twig', [
             'products' => $products,
-            'selectedCategory' => $selectedCategory,
-            'selectedBrand' => $brand,
+            'selectedCategories' => $selectedCategories,
+            'selectedBrands' => $brands,
             'allBrands' => $productRepository->findDistinctBrands(),
             'currentPage' => $page,
             'totalPages' => $totalPages,
             'priceMin' => $priceMin,
             'priceMax' => $priceMax,
+            'wishlistProductIds' => $wishlistProductIds,
         ]);
     }
 
@@ -131,15 +146,19 @@ public function addReview(#[MapEntity(mapping: ['slug' => 'slug'])] Product $pro
     return $this->redirectToRoute('app_product_show', ['slug' => $product->getSlug()]);
 }
 
-     #[Route('/avis/{id}/supprimer', name: 'app_review_delete', methods: ['POST'])]
-#[IsGranted('ROLE_USER')]
-public function deleteReview(Review $review, ReviewManager $reviewManager): Response
-{
-    $slug = $review->getProduct()->getSlug();
-    $reviewManager->deleteReview($this->getUser(), $review);
+    #[Route('/avis/{id}/supprimer', name: 'app_review_delete', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
+    public function deleteReview(Review $review, Request $request, ReviewManager $reviewManager): Response
+    {
+        if (!$this->isCsrfTokenValid('delete_review_' . $review->getId(), $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token CSRF invalide.');
+        }
 
-    $this->addFlash('success', 'Ton avis a été supprimé.');
+        $slug = $review->getProduct()->getSlug();
+        $reviewManager->deleteReview($this->getUser(), $review);
 
-    return $this->redirectToRoute('app_product_show', ['slug' => $slug]);
-}
+        $this->addFlash('success', 'Ton avis a été supprimé.');
+
+        return $this->redirectToRoute('app_product_show', ['slug' => $slug]);
+    }
 }

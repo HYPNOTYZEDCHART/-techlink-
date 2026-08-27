@@ -23,6 +23,9 @@ class ProductColor
     #[ORM\JoinColumn(nullable: false)]
     private ?Product $product = null;
 
+    #[ORM\Column(options: ['default' => 0])]
+    private ?int $stock = 0;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -60,6 +63,18 @@ class ProductColor
     public function setProduct(?Product $product): static
     {
         $this->product = $product;
+
+        return $this;
+    }
+
+    public function getStock(): ?int
+    {
+        return $this->stock;
+    }
+
+    public function setStock(int $stock): static
+    {
+        $this->stock = $stock;
 
         return $this;
     }

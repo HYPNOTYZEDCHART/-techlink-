@@ -24,8 +24,11 @@ class CartItem
     private ?Product $product = null;
 
     #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     private ?User $user = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $sessionId = null;
 
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $selectedColor = null;
@@ -91,6 +94,18 @@ class CartItem
     public function setSelectedColor(?string $selectedColor): static
     {
         $this->selectedColor = $selectedColor;
+
+        return $this;
+    }
+
+    public function getSessionId(): ?string
+    {
+        return $this->sessionId;
+    }
+
+    public function setSessionId(?string $sessionId): static
+    {
+        $this->sessionId = $sessionId;
 
         return $this;
     }

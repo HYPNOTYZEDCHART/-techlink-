@@ -10,16 +10,58 @@
             {% for item in items %}
                 <div class="flex justify-between text-sm py-2 {% if not loop.last %}border-b border-neutral-800{% endif %}">
                     <span>{{ item.product.name }}{% if item.selectedColor %} ({{ item.selectedColor }}){% endif %} × {{ item.quantity }}</span>
-                    <span class="text-neutral-400">{{ ((item.product.price * item.quantity) / 100)|number_format(0, ',', ' ') }} XOF</span>
+                    <span class="text-neutral-400">{{ (item.product.price * item.quantity)|number_format(0, ',', ' ') }} XOF</span>
                 </div>
             {% endfor %}
             <div class="flex justify-between font-bold pt-4 mt-2 border-t border-neutral-800">
+                <span>Sous-total</span>
+                <span class="text-white">{{ total|number_format(0, ',', ' ') }} XOF</span>
+            </div>
+            <div class="flex justify-between font-bold pt-2">
+                <span>Livraison</span>
+                <span class="text-neutral-400" id="delivery-display">Calculé à l'étape suivante</span>
+            </div>
+            <div class="flex justify-between font-bold pt-4 mt-2 border-t border-neutral-800 text-lg">
                 <span>Total</span>
-                <span class="text-orange-500">{{ (total / 100)|number_format(0, ',', ' ') }} XOF</span>
+                <span class="text-orange-500" id="total-display" data-subtotal="{{ total }}">{{ total|number_format(0, ',', ' ') }} XOF</span>
             </div>
         </div>
 
         <form method="post" class="flex flex-col gap-5" data-controller="loading-button">
+            <input type="hidden" name="_token" value="{{ csrf_token('cart_checkout') }}">
+            
+            {% if not app.user %}
+                <div class="border border-neutral-800 rounded-2xl p-6 bg-neutral-900/30 mb-2">
+                    <h2 class="font-bold mb-4">Informations personnelles</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="guest_first_name" class="block text-sm text-neutral-400 mb-2">Prénom</label>
+                            <input type="text" name="guest_first_name" id="guest_first_name" required class="w-full bg-neutral-900 border border-neutral-700 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-orange-500">
+                        </div>
+                        <div>
+                            <label for="guest_last_name" class="block text-sm text-neutral-400 mb-2">Nom</label>
+                            <input type="text" name="guest_last_name" id="guest_last_name" required class="w-full bg-neutral-900 border border-neutral-700 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-orange-500">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="guest_email" class="block text-sm text-neutral-400 mb-2">Email</label>
+                            <input type="email" name="guest_email" id="guest_email" class="w-full bg-neutral-900 border border-neutral-700 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-orange-500" placeholder="Pour le reçu (optionnel)">
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <h2 class="font-bold">Livraison</h2>
+            <div>
+                <label for="delivery_fee" class="block text-sm text-neutral-400 mb-2">Zone de livraison</label>
+                <select name="delivery_fee" id="delivery_fee" required class="w-full bg-neutral-900 border border-neutral-700 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-orange-500" onchange="updateTotal()">
+                    <option value="" disabled selected>Choisir une zone</option>
+                    <option value="1500">Dakar - Centre & Plateau (1 500 XOF)</option>
+                    <option value="2000">Dakar - Almadies / Ngor / Ouakam (2 000 XOF)</option>
+                    <option value="2500">Dakar - Parcelles / Guédiawaye (2 500 XOF)</option>
+                    <option value="3000">Dakar - Pikine / Rufisque / Keur Massar (3 000 XOF)</option>
+                    <option value="5000">Régions (5 000 XOF)</option>
+                </select>
+            </div>
             <div>
                 <label for="address" class="block text-sm text-neutral-400 mb-2">Adresse de livraison</label>
                 <textarea
@@ -53,4 +95,16 @@
             </button>
         </form>
     </section>
+
+    <script>
+        function updateTotal() {
+            const select = document.getElementById('delivery_fee');
+            const fee = parseInt(select.value) || 0;
+            const subtotal = parseInt(document.getElementById('total-display').dataset.subtotal);
+            const total = subtotal + fee;
+            
+            document.getElementById('delivery-display').innerText = new Intl.NumberFormat('fr-FR').format(fee) + ' XOF';
+            document.getElementById('total-display').innerText = new Intl.NumberFormat('fr-FR').format(total) + ' XOF';
+        }
+    </script>
 {% endblock %}

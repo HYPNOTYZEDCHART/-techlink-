@@ -22,4 +22,14 @@ class HomePageTest extends WebTestCase
 
         $this->assertResponseIsSuccessful();
     }
+
+    public function testSitemapLoadsSuccessfully(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/sitemap.xml');
+
+        $this->assertResponseIsSuccessful();
+        $this->assertStringContainsString('text/xml', $client->getResponse()->headers->get('Content-Type'));
+        $this->assertStringContainsString('<urlset', $client->getResponse()->getContent());
+    }
 }

@@ -6,19 +6,50 @@
         <title>{% block title %}<span class="text-neutral-500">&lt;/</span>techlink<span class="text-neutral-500">&gt;</span> Boutique{% endblock %}</title>
         <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text></svg>">
         
+        <!-- SEO Meta Tags -->
+        <meta name="description" content="{% block meta_description %}techLink Boutique - Laptops, smartphones et accessoires de qualité pro, livrés en 24h à Dakar (Sénégal).{% endblock %}">
+        <meta name="robots" content="{% block meta_robots %}index, follow{% endblock %}">
+        <meta name="view-transition" content="same-origin" />
+        
+        <!-- Open Graph / Facebook -->
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="{% block og_url %}{{ app.request.uri }}{% endblock %}">
+        <meta property="og:title" content="{% block og_title %}{{ block('title')|striptags }}{% endblock %}">
+        <meta property="og:description" content="{% block og_description %}{{ block('meta_description')|striptags }}{% endblock %}">
+        {% set og_image_val %}
+            {% block og_image %}{% endblock %}
+        {% endset %}
+        {% set og_image_val = og_image_val|trim %}
+        {% if og_image_val is not empty %}
+        <meta property="og:image" content="{{ og_image_val }}">
+        {% endif %}
+        
+        <!-- Twitter -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:url" content="{{ block('og_url') }}">
+        <meta name="twitter:title" content="{{ block('og_title') }}">
+        <meta name="twitter:description" content="{{ block('og_description') }}">
+        {% if og_image_val is not empty %}
+        <meta name="twitter:image" content="{{ og_image_val }}">
+        {% endif %}
+        
+        <!-- Canonical URL -->
+        <link rel="canonical" href="{{ block('og_url') }}">
+        
         <link rel="preconnect" href="https://fonts.googleapis.com">
      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
         {% block stylesheets %}
             <link rel="stylesheet" href="{{ asset('styles/app.css') }}">
+            <link rel="stylesheet" href="{{ asset('styles/custom.css') }}">
         {% endblock %}
 
         {% block javascripts %}
             {% block importmap %}{{ importmap('app') }}{% endblock %}
         {% endblock %}
     </head>
-    <body class="bg-black text-white antialiased">
+    <body class="bg-black text-white antialiased overflow-x-hidden">
        {% include 'components/_announcement_bar.html.twig' %}
         {% include 'components/_header.html.twig' %}
 

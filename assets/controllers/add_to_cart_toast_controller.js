@@ -24,9 +24,15 @@ export default class extends Controller {
                 headers: { 'X-Requested-With': 'XMLHttpRequest' },
             })
 
+            if (response.redirected && response.url.includes('/login')) {
+                window.location.href = response.url
+                return
+            }
+
             if (response.ok) {
-                this.showToast('✔ Produit ajouté au panier')
-                this.updateCartCount()
+                const data = await response.json()
+                this.showToast(data.message || '✔ Produit ajouté au panier')
+                this.updateCartCount(data.cartCount)
             } else {
                 this.showToast('Une erreur est survenue', true)
             }
@@ -52,9 +58,11 @@ export default class extends Controller {
         }, 2000)
     }
 
-    updateCartCount() {
+    updateCartCount(count) {
         const badge = document.querySelector('[data-cart-count]')
-        if (badge) {
+        if (badge && count !== undefined) {
+            badge.textContent = count
+        } else if (badge) {
             badge.textContent = parseInt(badge.textContent) + 1
         }
     }

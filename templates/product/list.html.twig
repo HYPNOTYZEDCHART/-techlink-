@@ -2,13 +2,34 @@
 
 {% block title %}Catalogue — TechLink{% endblock %}
 
+{% block meta_description %}
+    {%- if selectedCategories|length > 0 -%}
+        Découvrez notre sélection de {{ selectedCategories[0].name }} et plus chez TechLink. Matériel de qualité et livraison rapide sous 24h à Dakar.
+    {%- elseif selectedBrands|length > 0 -%}
+        Découvrez nos produits des marques {{ selectedBrands|join(', ') }} chez TechLink. Les meilleurs composants au meilleur prix à Dakar.
+    {%- else -%}
+        Explorez tout notre catalogue d'ordinateurs, smartphones et composants informatiques de qualité chez TechLink. Livraison sous 24h à Dakar.
+    {%- endif -%}
+{% endblock %}
+
 {% block body %}
     <section class="max-w-7xl mx-auto px-6 py-12">
 
-        <div class="flex items-center justify-between mb-8">
+        <div class="flex items-center justify-between mb-8 reveal reveal-delay-100">
             <h1 class="text-3xl font-bold">
-                {% if selectedCategory %}{{ selectedCategory.name }}{% else %}Tous nos produits{% endif %}
-                {% if selectedBrand %} — {{ selectedBrand }}{% endif %}
+                {% if selectedCategories|length == 1 %}
+                    {{ selectedCategories[0].name }}
+                {% elseif selectedCategories|length > 1 %}
+                    Produits filtrés ({{ selectedCategories|length }} catégories)
+                {% else %}
+                    Tous nos produits
+                {% endif %}
+                
+                {% if selectedBrands|length == 1 %}
+                    — {{ selectedBrands[0] }}
+                {% elseif selectedBrands|length > 1 %}
+                    — {{ selectedBrands|length }} marques
+                {% endif %}
             </h1>
             <p class="text-neutral-500 text-sm">{{ products|length }} résultat{{ products|length > 1 ? 's' : '' }}</p>
         </div>
@@ -25,23 +46,35 @@
                 </a>
             </div>
         {% else %}
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-6" data-controller="reveal">
                 {% for product in products %}
-                    <a href="{{ path('app_product_show', {slug: product.slug}) }}" class="relative border border-neutral-800 rounded-2xl p-4 hover:border-orange-500 hover:-translate-y-1 hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300 block group">
+                    <a href="{{ path('app_product_show', {slug: product.slug}) }}" class="relative border border-neutral-800 rounded-2xl p-4 product-card-3d block group reveal reveal-delay-{{ loop.index0 * 50 > 500 ? 500 : loop.index0 * 50 }}">
                         {% if product.oldPrice and product.oldPrice > product.price %}
                             {% set discount = ((product.oldPrice - product.price) / product.oldPrice * 100)|round %}
-                            <span class="absolute top-3 left-3 z-10 bg-orange-500 text-black text-xs font-bold px-2.5 py-1 rounded-full">
+                            <span class="absolute top-3 left-3 z-10 bg-orange-500 text-black text-xs font-bold px-2.5 py-1 rounded-full shadow-lg">
                                 -{{ discount }}%
                             </span>
                         {% endif %}
 
+                        <button
+                            type="button"
+                            data-controller="wishlist-toggle"
+                            data-wishlist-toggle-url-value="{{ path('app_wishlist_toggle', {id: product.id}) }}"
+                            data-action="click->wishlist-toggle#toggle"
+                            class="absolute top-3 right-3 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-neutral-900/80 backdrop-blur-sm border border-neutral-700 hover:border-orange-500 transition group/wishlist"
+                        >
+                            <span data-wishlist-toggle-target="icon" class="text-lg {{ product.id in wishlistProductIds|default([]) ? 'text-orange-500' : 'text-neutral-400 group-hover/wishlist:text-orange-500' }} transition">
+                                {{ product.id in wishlistProductIds|default([]) ? '♥' : '♡' }}
+                            </span>
+                        </button>
+
                         {% if product.imageFilename %}
-                            <div class="overflow-hidden rounded-xl mb-4 bg-neutral-900">
+                            <div class="overflow-hidden rounded-xl mb-4 bg-neutral-900 image-zoom-hover">
                                 <img
                                     src="{{ asset('images/products/' ~ product.imageFilename) }}"
                                     alt="{{ product.name }}"
                                     loading="lazy"
-                                    class="h-40 w-full object-cover opacity-0 group-hover:scale-110 transition-transform duration-300"
+                                    class="h-40 w-full object-cover opacity-0 transition-opacity duration-300"
                                     onload="this.classList.remove('opacity-0')"
                                 >
                             </div>
@@ -52,9 +85,9 @@
                         <p class="text-xs text-neutral-500">{{ product.brand }}</p>
                         <p class="font-semibold">{{ product.name }}</p>
                         <div class="flex items-center gap-2 mt-2">
-                            <p class="text-orange-500 font-bold">{{ (product.price / 100)|number_format(0, ',', ' ') }} XOF</p>
+                            <p class="text-orange-500 font-bold">{{ product.price|number_format(0, ',', ' ') }} XOF</p>
                             {% if product.oldPrice and product.oldPrice > product.price %}
-                                <p class="text-neutral-500 text-xs line-through">{{ (product.oldPrice / 100)|number_format(0, ',', ' ') }} XOF</p>
+                                <p class="text-neutral-500 text-xs line-through">{{ product.oldPrice|number_format(0, ',', ' ') }} XOF</p>
                             {% endif %}
                         </div>
                         <p class="text-xs text-neutral-500 mt-1">

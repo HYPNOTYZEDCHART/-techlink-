@@ -48,6 +48,9 @@ class CustomerOrderCrudController extends AbstractCrudController
         return [
             IdField::new('id')->hideOnForm(),
             AssociationField::new('user', 'Client')->hideOnForm(),
+            TextField::new('guestEmail', 'Email (Invité)')->hideOnForm(),
+            TextField::new('guestFirstName', 'Prénom (Invité)')->hideOnForm(),
+            TextField::new('guestLastName', 'Nom (Invité)')->hideOnForm(),
             ChoiceField::new('status', 'Statut')->setChoices([
                 'En attente' => 'pending',
                 'Confirmée' => 'confirmed',
@@ -56,6 +59,7 @@ class CustomerOrderCrudController extends AbstractCrudController
                 'Annulée' => 'cancelled',
             ]),
             IntegerField::new('total', 'Total (centimes)')->hideOnForm(),
+            IntegerField::new('deliveryFee', 'Frais livraison (centimes)')->hideOnForm(),
             TextField::new('deliveryPhone', 'Téléphone'),
             TextareaField::new('deliveryAddress', 'Adresse de livraison'),
             DateTimeField::new('createdAt', 'Date')->hideOnForm(),
@@ -87,14 +91,16 @@ public function exportCsv(CustomerOrderRepository $repository): Response
 
         $response = new StreamedResponse(function () use ($orders) {
             $handle = fopen('php://output', 'w+');
-            fputcsv($handle, ['ID', 'Client', 'Statut', 'Total (XOF)', 'Date']);
+            fputcsv($handle, ['ID', 'Client', 'Statut', 'Total (XOF)', 'Frais (XOF)', 'Date']);
 
             foreach ($orders as $order) {
+                $client = $order->getUser() ? $order->getUser()->getEmail() : $order->getGuestEmail() . ' (Invité)';
                 fputcsv($handle, [
                     $order->getId(),
-                    $order->getUser()->getEmail(),
+                    $client,
                     $order->getStatus(),
                     $order->getTotal() / 100,
+                    $order->getDeliveryFee() / 100,
                     $order->getCreatedAt()->format('d/m/Y H:i'),
                 ]);
             }

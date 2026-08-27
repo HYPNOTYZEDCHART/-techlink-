@@ -16,20 +16,22 @@ use App\Service\InvoiceGenerator;
 final class CartController extends AbstractController
 {
     #[Route('/panier', name: 'app_cart')]
-    #[IsGranted('ROLE_USER')]
-    public function index(CartManager $cartManager): Response
+    public function index(CartManager $cartManager, Request $request): Response
     {
+        $session = $request->getSession();
+        $sessionId = $session->getId();
+        
         $items = $cartManager->getItems($this->getUser());
         $total = $cartManager->getTotalPrice($this->getUser());
 
         return $this->render('cart/index.html.twig', [
             'items' => $items,
             'total' => $total,
+            'debug_session_id' => $sessionId,
         ]);
     }
 
     #[Route('/panier/ajouter/{id}', name: 'app_cart_add', methods: ['POST'])]
-    #[IsGranted('ROLE_USER')]
     public function add(Product $product, Request $request, CartManager $cartManager): Response
 {
     $color = $request->request->get('color');
@@ -42,15 +44,43 @@ final class CartController extends AbstractController
 
     $cartManager->addProduct($this->getUser(), $product, $quantity, $color);
 
-        $this->addFlash('success', $product->getName() . ' ajouté au panier');
+    if ($request->isXmlHttpRequest()) {
+        return $this->json([
+            'success' => true,
+            'message' => $product->getName() . ' ajouté au panier',
+            'cartCount' => $cartManager->getTotalItemCount($this->getUser()),
+        ]);
+    }
 
-        return $this->redirectToRoute('app_product_show', ['slug' => $product->getSlug()]);
+    $this->addFlash('success', $product->getName() . ' ajouté au panier');
+    return $this->redirectToRoute('app_product_show', ['slug' => $product->getSlug()]);
+}
+
+    private function checkCartItemAccess(CartItem $cartItem, Request $request): void
+    {
+        $session = $request->getSession();
+        $isOwner = false;
+        
+        if ($this->getUser() && $cartItem->getUser() === $this->getUser()) {
+            $isOwner = true;
+        } elseif (!$this->getUser() && !$cartItem->getUser() && $cartItem->getSessionId() === $session->getId()) {
+            $isOwner = true;
+        }
+
+        if (!$isOwner) {
+            throw $this->createAccessDeniedException('Vous ne pouvez pas modifier ce panier.');
+        }
     }
 
     #[Route('/panier/modifier/{id}', name: 'app_cart_update', methods: ['POST'])]
-    #[IsGranted('ROLE_USER')]
     public function update(CartItem $cartItem, Request $request, CartManager $cartManager): Response
     {
+        if (!$this->isCsrfTokenValid('cart_update_' . $cartItem->getId(), $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token CSRF invalide.');
+        }
+
+        $this->checkCartItemAccess($cartItem, $request);
+
         $quantity = (int) $request->request->get('quantity', 1);
         $cartManager->updateQuantity($cartItem, $quantity);
 
@@ -58,16 +88,20 @@ final class CartController extends AbstractController
     }
 
     #[Route('/panier/supprimer/{id}', name: 'app_cart_remove', methods: ['POST'])]
-    #[IsGranted('ROLE_USER')]
-    public function remove(CartItem $cartItem, CartManager $cartManager): Response
+    public function remove(CartItem $cartItem, Request $request, CartManager $cartManager): Response
     {
+        if (!$this->isCsrfTokenValid('cart_remove_' . $cartItem->getId(), $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token CSRF invalide.');
+        }
+
+        $this->checkCartItemAccess($cartItem, $request);
+        
         $cartManager->removeItem($cartItem);
 
         return $this->redirectToRoute('app_cart');
     }
 
     #[Route('/panier/commander', name: 'app_cart_checkout', methods: ['GET', 'POST'])]
-    #[IsGranted('ROLE_USER')]
     public function checkout(Request $request, CartManager $cartManager): Response
     {
         $items = $cartManager->getItems($this->getUser());
@@ -77,10 +111,19 @@ final class CartController extends AbstractController
         }
 
         if ($request->isMethod('POST')) {
+            if (!$this->isCsrfTokenValid('cart_checkout', $request->request->get('_token'))) {
+                throw $this->createAccessDeniedException('Token CSRF invalide.');
+            }
+
             $address = $request->request->get('address');
             $phone = $request->request->get('phone');
+            $deliveryFee = (int) $request->request->get('delivery_fee', 0);
+            
+            $guestEmail = $request->request->get('guest_email');
+            $guestFirstName = $request->request->get('guest_first_name');
+            $guestLastName = $request->request->get('guest_last_name');
 
-            $order = $cartManager->checkout($this->getUser(), $address, $phone);
+            $order = $cartManager->checkout($this->getUser(), $address, $phone, $guestEmail, $guestFirstName, $guestLastName, $deliveryFee);
 
             return $this->redirectToRoute('app_order_confirmation', ['id' => $order->getId()]);
         }
@@ -92,10 +135,13 @@ final class CartController extends AbstractController
     }
 
     #[Route('/commande/{id}/confirmation', name: 'app_order_confirmation')]
-    #[IsGranted('ROLE_USER')]
-    public function confirmation(CustomerOrder $order): Response
+    public function confirmation(CustomerOrder $order, Request $request): Response
     {
-        if ($order->getUser() !== $this->getUser()) {
+        // Allow if user is order's user OR if the session ID matches
+        $session = $request->getSession();
+        $isGuestOwner = !$order->getUser() && $order->getSessionId() === $session->getId();
+        
+        if ($order->getUser() !== $this->getUser() && !$isGuestOwner) {
             throw $this->createAccessDeniedException();
         }
 
@@ -105,12 +151,15 @@ final class CartController extends AbstractController
     }
 
     #[Route('/commande/{id}/facture', name: 'app_order_invoice')]
-#[IsGranted('ROLE_USER')]
-public function invoice(CustomerOrder $order, InvoiceGenerator $invoiceGenerator): Response
-{
-    if ($order->getUser() !== $this->getUser()) {
-        throw $this->createAccessDeniedException();
-    }
+    public function invoice(CustomerOrder $order, InvoiceGenerator $invoiceGenerator, Request $request): Response
+    {
+        // Allow if user is order's user OR if the session ID matches
+        $session = $request->getSession();
+        $isGuestOwner = !$order->getUser() && $order->getSessionId() === $session->getId();
+        
+        if ($order->getUser() !== $this->getUser() && !$isGuestOwner) {
+            throw $this->createAccessDeniedException();
+        }
 
     $pdf = $invoiceGenerator->generate($order);
 

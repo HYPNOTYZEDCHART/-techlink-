@@ -16,28 +16,20 @@ class CategoryRepository extends ServiceEntityRepository
         parent::__construct($registry, Category::class);
     }
 
-    //    /**
-    //     * @return Category[] Returns an array of Category objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('c')
-    //            ->andWhere('c.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('c.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    /**
+     * Retourne uniquement les slugs de toutes les catégories pour le sitemap.
+     * Utilise un tableau scalaire pour éviter de charger les entités et leurs collections associées.
+     *
+     * @return string[]
+     */
+    public function findSlugsForSitemap(): array
+    {
+        $result = $this->createQueryBuilder('c')
+            ->select('c.slug')
+            ->orderBy('c.name', 'ASC')
+            ->getQuery()
+            ->getScalarResult();
 
-    //    public function findOneBySomeField($value): ?Category
-    //    {
-    //        return $this->createQueryBuilder('c')
-    //            ->andWhere('c.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+        return array_column($result, 'slug');
+    }
 }

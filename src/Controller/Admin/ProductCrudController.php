@@ -66,8 +66,8 @@ return $this->redirect($url);
             TextField::new('name', 'Nom'),
             TextField::new('slug'),
             TextareaField::new('description'),
-            IntegerField::new('price', 'Prix (centimes)'),
-            IntegerField::new('oldPrice', 'Ancien prix (centimes, optionnel)')->hideOnIndex(),
+            IntegerField::new('price', 'Prix (en XOF)'),
+            IntegerField::new('oldPrice', 'Ancien prix (en XOF, optionnel)')->hideOnIndex(),
             TextField::new('colors', 'Couleurs (séparées par des virgules)')->hideOnIndex(),
             IntegerField::new('stock')
                 ->formatValue(function ($value) {
@@ -97,6 +97,17 @@ return $this->redirect($url);
                 ->onlyOnForms(),
             BooleanField::new('isActive', 'Actif'),
             AssociationField::new('category', 'Catégorie'),
+            TextareaField::new('specificationsRaw', 'Spécifications techniques')
+                ->hideOnIndex()
+                ->setNumOfRows(8)
+                ->setHelp(
+                    'Une spécification par ligne, format <strong>Clé: Valeur</strong>.<br>' .
+                    'Exemples :<br>' .
+                    '<code>Processeur: Intel Core i7-1355U</code><br>' .
+                    '<code>RAM: 16 Go DDR5</code><br>' .
+                    '<code>Stockage: 512 Go SSD NVMe</code><br>' .
+                    '<code>Écran: 15.6" Full HD 144Hz</code>'
+                ),
         ];
     }
 }

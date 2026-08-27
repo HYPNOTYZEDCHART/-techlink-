@@ -46,13 +46,13 @@
                 <tr>
                     <td>{{ item.product.name }}{% if item.selectedColor %} ({{ item.selectedColor }}){% endif %}</td>
                     <td>{{ item.quantity }}</td>
-                    <td>{{ (item.unitPrice / 100)|number_format(0, ',', ' ') }} XOF</td>
-                    <td>{{ ((item.unitPrice * item.quantity) / 100)|number_format(0, ',', ' ') }} XOF</td>
+                    <td>{{ item.unitPrice|number_format(0, ',', ' ') }} XOF</td>
+                    <td>{{ (item.unitPrice * item.quantity)|number_format(0, ',', ' ') }} XOF</td>
                 </tr>
             {% endfor %}
             <tr class="total-row">
                 <td colspan="3">Total</td>
-                <td>{{ (order.total / 100)|number_format(0, ',', ' ') }} XOF</td>
+                <td>{{ order.total|number_format(0, ',', ' ') }} XOF</td>
             </tr>
         </tbody>
     </table>

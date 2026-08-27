@@ -23,6 +23,7 @@ class ProductColorCrudController extends AbstractCrudController
             AssociationField::new('product', 'Produit'),
             TextField::new('name', 'Nom de la couleur'),
             ColorField::new('hexCode', 'Code couleur'),
+            \EasyCorp\Bundle\EasyAdminBundle\Field\IntegerField::new('stock', 'En stock'),
         ];
     }
 }

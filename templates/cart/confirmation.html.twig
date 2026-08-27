@@ -14,12 +14,12 @@
             {% for item in order.orderItems %}
                 <div class="flex justify-between text-sm py-2 {% if not loop.last %}border-b border-neutral-800{% endif %}">
                     <span>{{ item.product.name }}{% if item.selectedColor %} ({{ item.selectedColor }}){% endif %} × {{ item.quantity }}</span>
-                    <span class="text-neutral-400">{{ ((item.unitPrice * item.quantity) / 100)|number_format(0, ',', ' ') }} XOF</span>
+                    <span class="text-neutral-400">{{ (item.unitPrice * item.quantity)|number_format(0, ',', ' ') }} XOF</span>
                 </div>
             {% endfor %}
             <div class="flex justify-between font-bold pt-4 mt-2 border-t border-neutral-800">
                 <span>Total</span>
-                <span class="text-orange-500">{{ (order.total / 100)|number_format(0, ',', ' ') }} XOF</span>
+                <span class="text-orange-500">{{ order.total|number_format(0, ',', ' ') }} XOF</span>
             </div>
         </div>
 

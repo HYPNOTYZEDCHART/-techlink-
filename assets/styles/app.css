@@ -1,7 +1,10 @@
 @import "tailwindcss";
 
+@source "../../templates";
+
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    animation: fade-in 0.25s ease-out;
 }
 
 @keyframes marquee {
@@ -21,10 +24,6 @@ body {
 
 html.turbo-loading {
     cursor: wait;
-}
-
-body {
-    animation: fade-in 0.25s ease-out;
 }
 
 @keyframes fade-in {

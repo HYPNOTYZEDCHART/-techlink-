@@ -32,8 +32,23 @@ class CustomerOrder
     private ?string $deliveryPhone = null;
 
     #[ORM\ManyToOne(inversedBy: 'customerOrders')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     private ?User $user = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $sessionId = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $guestEmail = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $guestFirstName = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $guestLastName = null;
+
+    #[ORM\Column(options: ['default' => 0])]
+    private ?int $deliveryFee = 0;
 
     /**
      * @var Collection<int, OrderItem>
@@ -165,5 +180,60 @@ class CustomerOrder
         }
 
         return implode("\n", $lines);
+    }
+
+    public function getSessionId(): ?string
+    {
+        return $this->sessionId;
+    }
+
+    public function setSessionId(?string $sessionId): static
+    {
+        $this->sessionId = $sessionId;
+        return $this;
+    }
+
+    public function getGuestEmail(): ?string
+    {
+        return $this->guestEmail;
+    }
+
+    public function setGuestEmail(?string $guestEmail): static
+    {
+        $this->guestEmail = $guestEmail;
+        return $this;
+    }
+
+    public function getGuestFirstName(): ?string
+    {
+        return $this->guestFirstName;
+    }
+
+    public function setGuestFirstName(?string $guestFirstName): static
+    {
+        $this->guestFirstName = $guestFirstName;
+        return $this;
+    }
+
+    public function getGuestLastName(): ?string
+    {
+        return $this->guestLastName;
+    }
+
+    public function setGuestLastName(?string $guestLastName): static
+    {
+        $this->guestLastName = $guestLastName;
+        return $this;
+    }
+
+    public function getDeliveryFee(): ?int
+    {
+        return $this->deliveryFee;
+    }
+
+    public function setDeliveryFee(int $deliveryFee): static
+    {
+        $this->deliveryFee = $deliveryFee;
+        return $this;
     }
 }

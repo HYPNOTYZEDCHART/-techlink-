@@ -14,6 +14,7 @@ class CategoriesExtensionRuntime implements RuntimeExtensionInterface
         private CategoryRepository $categoryRepository,
         private ProductRepository $productRepository,
         private CartManager $cartManager,
+        private \App\Service\WishlistManager $wishlistManager,
         private Security $security,
     ) {
     }
@@ -31,11 +32,17 @@ class CategoriesExtensionRuntime implements RuntimeExtensionInterface
     public function getCartCount(): int
     {
         $user = $this->security->getUser();
+        return $this->cartManager->getTotalItemCount($user);
+    }
+
+    public function getWishlistCount(): int
+    {
+        $user = $this->security->getUser();
 
         if (!$user) {
             return 0;
         }
 
-        return $this->cartManager->getTotalItemCount($user);
+        return count($this->wishlistManager->getItems($user));
     }
 }

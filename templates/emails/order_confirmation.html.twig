@@ -7,14 +7,14 @@
             {% for item in order.orderItems %}
                 <div style="display: flex; justify-content: space-between; color: #d4d4d4; font-size: 13px; padding: 6px 0;">
                     <span>{{ item.product.name }}{% if item.selectedColor %} ({{ item.selectedColor }}){% endif %} × {{ item.quantity }}</span>
-                    <span>{{ ((item.unitPrice * item.quantity) / 100)|number_format(0, ',', ' ') }} XOF</span>
+                    <span>{{ (item.unitPrice * item.quantity)|number_format(0, ',', ' ') }} XOF</span>
                 </div>
             {% endfor %}
         </div>
 
         <div style="display: flex; justify-content: space-between; color: white; font-weight: 600; font-size: 16px; margin-bottom: 24px;">
             <span>Total</span>
-            <span>{{ (order.total / 100)|number_format(0, ',', ' ') }} XOF</span>
+            <span>{{ order.total|number_format(0, ',', ' ') }} XOF</span>
         </div>
 
         <p style="color: #737373; font-size: 12px; line-height: 1.6;">

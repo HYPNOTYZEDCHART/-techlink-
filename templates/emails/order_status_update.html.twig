@@ -10,7 +10,12 @@
         </div>
 
         <p style="color: #a3a3a3; font-size: 13px; line-height: 1.6;">
-            Le statut de ta commande vient d'être mis à jour. Tu peux suivre son évolution à tout moment depuis ton espace "Mes commandes".
+            Le statut de ta commande vient d'être mis à jour.
+            {% if order.user %}
+                Tu peux suivre son évolution à tout moment depuis ton espace "Mes commandes".
+            {% else %}
+                Si tu as des questions, n'hésite pas à nous contacter en répondant à cet email.
+            {% endif %}
         </p>
 
         <p style="color: #737373; font-size: 12px; line-height: 1.6; margin-top: 20px;">

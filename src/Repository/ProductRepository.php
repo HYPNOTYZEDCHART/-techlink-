@@ -68,16 +68,23 @@ class ProductRepository extends ServiceEntityRepository
     $qb = $this->createQueryBuilder('p');
 
     foreach ($criteria as $field => $value) {
-        $qb->andWhere("p.$field = :$field")
-            ->setParameter($field, $value);
+        if (is_array($value)) {
+            if (!empty($value)) {
+                $qb->andWhere("p.$field IN (:$field)")
+                   ->setParameter($field, $value);
+            }
+        } else {
+            $qb->andWhere("p.$field = :$field")
+               ->setParameter($field, $value);
+        }
     }
 
     if ($priceMin !== null) {
-        $qb->andWhere('p.price >= :priceMin')->setParameter('priceMin', $priceMin * 100);
+        $qb->andWhere('p.price >= :priceMin')->setParameter('priceMin', $priceMin);
     }
 
     if ($priceMax !== null) {
-        $qb->andWhere('p.price <= :priceMax')->setParameter('priceMax', $priceMax * 100);
+        $qb->andWhere('p.price <= :priceMax')->setParameter('priceMax', $priceMax);
     }
 
     $qb->orderBy('p.createdAt', 'DESC')
@@ -94,16 +101,23 @@ class ProductRepository extends ServiceEntityRepository
         ->orderBy('p.createdAt', 'DESC');
 
     foreach ($criteria as $field => $value) {
-        $qb->andWhere("p.$field = :$field")
-            ->setParameter($field, $value);
+        if (is_array($value)) {
+            if (!empty($value)) {
+                $qb->andWhere("p.$field IN (:$field)")
+                   ->setParameter($field, $value);
+            }
+        } else {
+            $qb->andWhere("p.$field = :$field")
+               ->setParameter($field, $value);
+        }
     }
 
     if ($priceMin !== null) {
-        $qb->andWhere('p.price >= :priceMin')->setParameter('priceMin', $priceMin * 100);
+        $qb->andWhere('p.price >= :priceMin')->setParameter('priceMin', $priceMin);
     }
 
     if ($priceMax !== null) {
-        $qb->andWhere('p.price <= :priceMax')->setParameter('priceMax', $priceMax * 100);
+        $qb->andWhere('p.price <= :priceMax')->setParameter('priceMax', $priceMax);
     }
 
     $qb->setFirstResult(($page - 1) * $limit)
@@ -111,4 +125,22 @@ class ProductRepository extends ServiceEntityRepository
 
     return new Paginator($qb);
 }
+    /**
+     * Retourne uniquement les slugs des produits actifs pour le sitemap.
+     * Utilise un tableau scalaire pour éviter de charger les entités complètes en mémoire.
+     *
+     * @return string[]
+     */
+    public function findSlugsForSitemap(): array
+    {
+        $result = $this->createQueryBuilder('p')
+            ->select('p.slug')
+            ->andWhere('p.isActive = true')
+            ->andWhere('p.stock > 0')
+            ->orderBy('p.id', 'ASC')
+            ->getQuery()
+            ->getScalarResult();
+
+        return array_column($result, 'slug');
+    }
 }
