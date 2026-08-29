@@ -45,6 +45,10 @@ RUN composer install --no-dev --optimize-autoloader
 RUN mkdir -p var public/uploads \
     && chown -R www-data:www-data var public/uploads
 
+# Compiler les assets pour la production (Tailwind + AssetMapper)
+RUN php bin/console tailwind:build --minify \
+    && php bin/console asset-map:compile
+
 EXPOSE 80
 
 # Script pour lancer les migrations puis démarrer Apache
