@@ -28,7 +28,7 @@ services:
       - key: MAILER_FROM
         value: 'doumbiabecaye7@gmail.com'
       - key: TRUSTED_PROXIES
-        value: '127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16'
+        value: '127.0.0.1,REMOTE_ADDR'
       - key: SUPABASE_URL
         value: 'https://xxxxxxxxxxxxxxxxxxxx.supabase.co'
       - key: SUPABASE_BUCKET
