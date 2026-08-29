@@ -36,6 +36,7 @@ COPY . .
 
 # Autoriser Composer en tant que root pour l'installation
 ENV COMPOSER_ALLOW_SUPERUSER=1
+ENV APP_ENV=prod
 
 # Installer les dépendances Composer pour la production
 RUN composer install --no-dev --optimize-autoloader
