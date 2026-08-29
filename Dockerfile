@@ -55,9 +55,10 @@ RUN php bin/console importmap:install --no-interaction
 RUN php bin/console tailwind:build --minify --no-interaction || true
 RUN php bin/console asset-map:compile --no-interaction || true
 
-# Donner les bons droits à Apache
-RUN mkdir -p var public/uploads \
-    && chown -R www-data:www-data var public/uploads
+# Donner les bons droits à Apache pour les dossiers inscriptibles
+RUN mkdir -p var/sessions/prod var/sessions/dev var/cache var/log public/uploads \
+    && chown -R www-data:www-data var public/uploads \
+    && chmod -R 775 var public/uploads
 
 EXPOSE 80
 
