@@ -16,4 +16,10 @@ services:
 
     App\EventListener\OrderStatusListener:
         arguments:
-            $senderEmail: '%env(MAILER_FROM)%'        
+            $senderEmail: '%env(MAILER_FROM)%'
+
+    # Stockage des sessions en base de données (fiable sur Render)
+    Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler:
+        arguments:
+            - '%env(DATABASE_URL)%'
+            - { db_table: 'sessions', db_id_col: 'sess_id', db_data_col: 'sess_data', db_time_col: 'sess_time', db_lifetime_col: 'sess_lifetime', db_connection_options: { 8: true } }
