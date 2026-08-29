@@ -17,19 +17,20 @@ class ImageUploadListener implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            VichUploaderEvents::POST_UPLOAD => 'onPostUpload',
+            VichUploaderEvents::PRE_UPLOAD => 'onPreUpload',
         ];
     }
 
-    public function onPostUpload(Event $event): void
+    public function onPreUpload(Event $event): void
     {
         $mapping = $event->getMapping();
         $object = $event->getObject();
 
-        $filePath = $mapping->getUploadDestination() . '/' . $mapping->getFileName($object);
+        // Get the uploaded file
+        $file = $mapping->getFile($object);
 
-        if (file_exists($filePath)) {
-            $this->imageOptimizer->optimize($filePath);
+        if ($file instanceof \Symfony\Component\HttpFoundation\File\UploadedFile && file_exists($file->getPathname())) {
+            $this->imageOptimizer->optimize($file->getPathname());
         }
     }
 }

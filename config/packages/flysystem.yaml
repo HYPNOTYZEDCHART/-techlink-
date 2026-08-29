@@ -1,0 +1,8 @@
+flysystem:
+    storages:
+        supabase.storage:
+            adapter: 'aws'
+            options:
+                client: 'Aws\S3\S3Client'
+                bucket: '%env(SUPABASE_BUCKET)%'
+                prefix: ''

@@ -23,3 +23,14 @@ services:
         arguments:
             - '%env(DATABASE_URL)%'
             - { db_table: 'sessions', db_id_col: 'sess_id', db_data_col: 'sess_data', db_time_col: 'sess_time', db_lifetime_col: 'sess_lifetime' }
+
+    # Client S3 pour Supabase Storage
+    Aws\S3\S3Client:
+        arguments:
+            - version: 'latest'
+              region: '%env(SUPABASE_REGION)%'
+              endpoint: '%env(SUPABASE_ENDPOINT)%'
+              use_path_style_endpoint: true
+              credentials:
+                  key: '%env(SUPABASE_ACCESS_KEY)%'
+                  secret: '%env(SUPABASE_SECRET_KEY)%'
