@@ -1,24 +1,9 @@
 services:
-  # 1. Base de données MariaDB (Service Privé)
-  - type: pserv
+  # 1. Base de données PostgreSQL managée (Supportée en plan gratuit avec persistance)
+  - type: psql
     name: mon-projet-db
-    env: docker
     plan: free
-    image:
-      url: mariadb:10.4
-    disk:
-      name: mariadb-data
-      mountPath: /var/lib/mysql
-      sizeGB: 1
-    envVars:
-      - key: MYSQL_ROOT_PASSWORD
-        generateValue: true
-      - key: MYSQL_DATABASE
-        value: app
-      - key: MYSQL_USER
-        value: app
-      - key: MYSQL_PASSWORD
-        generateValue: true
+    postgresMajorVersion: 16
 
   # 2. Application Web Docker
   - type: web
@@ -27,11 +12,10 @@ services:
     plan: free
     dockerfilePath: ./Dockerfile
     envVars:
-      - key: DB_PASS
-        fromService:
+      - key: DATABASE_URL
+        fromDatabase:
           name: mon-projet-db
-          type: pserv
-          envVarKey: MYSQL_PASSWORD
+          property: connectionString
       - key: APP_ENV
         value: prod
       - key: APP_SECRET
