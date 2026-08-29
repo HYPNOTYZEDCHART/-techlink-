@@ -45,7 +45,7 @@ RUN mkdir -p var public/uploads \
 EXPOSE 80
 
 # Script pour lancer les migrations puis démarrer Apache
-RUN echo '#!/bin/bash\nphp bin/console doctrine:migrations:migrate --no-interaction\napache2-foreground' > /usr/local/bin/start.sh \
+RUN echo '#!/bin/bash\nexport DATABASE_URL="mysql://app:${DB_PASS}@mon-projet-db:3306/app?serverVersion=10.4.32-MariaDB&charset=utf8mb4"\nphp bin/console doctrine:migrations:migrate --no-interaction\napache2-foreground' > /usr/local/bin/start.sh \
     && chmod +x /usr/local/bin/start.sh
 
 CMD ["/usr/local/bin/start.sh"]
