@@ -1,0 +1,51 @@
+FROM php:8.2-apache
+
+# Installer les dépendances système nécessaires
+RUN apt-get update && apt-get install -y \
+    libicu-dev \
+    libpq-dev \
+    libzip-dev \
+    unzip \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Installer les extensions PHP
+RUN docker-php-ext-install \
+    intl \
+    pdo_mysql \
+    zip \
+    opcache
+
+# Activer le mod_rewrite pour Apache
+RUN a2enmod rewrite
+
+# Configuration Apache pour Symfony (Pointer vers le dossier public)
+ENV APACHE_DOCUMENT_ROOT /var/www/html/public
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
+RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+
+# Installer Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+WORKDIR /var/www/html
+
+# Copier les fichiers du projet
+COPY . .
+
+# Autoriser Composer en tant que root pour l'installation
+ENV COMPOSER_ALLOW_SUPERUSER=1
+
+# Installer les dépendances Composer pour la production
+RUN composer install --no-dev --optimize-autoloader
+
+# Donner les bons droits à Apache pour les dossiers inscriptibles
+RUN mkdir -p var public/uploads \
+    && chown -R www-data:www-data var public/uploads
+
+EXPOSE 80
+
+# Script pour lancer les migrations puis démarrer Apache
+RUN echo '#!/bin/bash\nphp bin/console doctrine:migrations:migrate --no-interaction\napache2-foreground' > /usr/local/bin/start.sh \
+    && chmod +x /usr/local/bin/start.sh
+
+CMD ["/usr/local/bin/start.sh"]
