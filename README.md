@@ -30,18 +30,19 @@ Construite comme un **projet de portfolio de niveau professionnel**, cette plate
 
 ---
 
-## 🛠️ Stack Technique
+## 🛠️ Stack Technique & Architecture de Déploiement
 
 - **Langage** : PHP 8.2+
 - **Framework Backend** : Symfony 7.4
-- **ORM & Base de Données** : Doctrine ORM couplé à MariaDB / PostgreSQL.
+- **ORM & Base de Données** : Doctrine ORM couplé à PostgreSQL (Production) / MariaDB (Développement).
+- **Stockage Cloud (S3)** : Supabase Storage (S3-compatible) géré via *Flysystem* et *VichUploader* pour garantir la persistance des images sur un environnement cloud (nécessaire pour les hébergements immuables comme Render).
 - **Frontend** : Twig (Moteur de templates), Tailwind CSS v4 (Design system utilitaire).
 - **Interactivité** : Symfony UX, Hotwired Stimulus, Turbo.
 - **Administration** : EasyAdmin 5 (Dashboard complet pour la gestion CRUD des produits, commandes, et utilisateurs).
-- **Outils Annexes** :
-  - *VichUploaderBundle* : Gestion fiable de l'upload des médias (images produits).
-  - *Dompdf* : Rendu et streaming de documents PDF complexes.
-  - *Symfony Mailer* : Envoi transactionnel d'emails HTML (suivi de commandes, réinitialisation de mot de passe).
+- **Infrastructure de Production (Render)** :
+  - **Docker** : Conteneurisation de l'application (Apache + PHP 8.2).
+  - **Sessions Database** : Persistance des sessions dans PostgreSQL pour éviter les déconnexions sur un environnement stateless.
+  - **Proxy de confiance** : Configuration des en-têtes HTTP pour la détection sécurisée du HTTPS derrière le Load Balancer de Render.
 
 ---
 
@@ -60,10 +61,17 @@ Assurez-vous d'avoir PHP 8.2+ et Composer installés sur votre machine.
    composer install
    ```
 
-3. **Configurer la base de données**
-   Copiez le fichier `.env` vers `.env.local` et adaptez la variable `DATABASE_URL` (par défaut préconfigurée pour MariaDB local) :
+3. **Configurer l'environnement (.env.local)**
+   Configurez la base de données et les clés d'accès S3 Supabase pour les images :
    ```env
    DATABASE_URL="mysql://root:@127.0.0.1:3306/mon_projet?serverVersion=10.4.32-MariaDB&charset=utf8mb4"
+   
+   SUPABASE_URL="https://votre-projet.supabase.co"
+   SUPABASE_BUCKET="techlink"
+   SUPABASE_REGION="eu-west-1"
+   SUPABASE_ENDPOINT="https://votre-projet.storage.supabase.co"
+   SUPABASE_ACCESS_KEY="votre-access-key"
+   SUPABASE_SECRET_KEY="votre-secret-key"
    ```
 
 4. **Initialiser la base de données**
@@ -90,6 +98,6 @@ Assurez-vous d'avoir PHP 8.2+ et Composer installés sur votre machine.
 **Becaye Doumbouya**  
 *Étudiant en Licence Informatique de Gestion, UCAO ISG Saint Michel, Dakar.*
 
-Ce projet a été conçu pour démontrer mon expertise dans le développement d'applications web modernes, ma compréhension des enjeux métiers (logistique, stocks, facturation), et ma rigueur concernant la sécurité des données utilisateurs. 
+Ce projet a été conçu pour démontrer mon expertise dans le développement d'applications web modernes, ma compréhension des enjeux métiers (logistique, stocks, facturation), ma rigueur concernant la sécurité des données utilisateurs, et ma capacité à déployer des architectures cloud résilientes (Docker, S3, PostgreSQL).
 
 N'hésitez pas à me contacter via GitHub ou LinkedIn pour toute opportunité professionnelle ou question technique concernant l'architecture de ce projet !
