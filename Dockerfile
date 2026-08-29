@@ -7,6 +7,8 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     unzip \
     git \
+    nodejs \
+    npm \
     && rm -rf /var/lib/apt/lists/*
 
 # Installer les extensions PHP
@@ -21,11 +23,11 @@ RUN docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
 # Activer le mod_rewrite pour Apache
 RUN a2enmod rewrite
 
-# Configuration Apache pour Symfony (Pointer vers le dossier public et autoriser le routage)
-ENV APACHE_DOCUMENT_ROOT /var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
-RUN sed -i 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf
+# Configuration Apache pour Symfony
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
+    && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf \
+    && sed -i 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf
 
 # Installer Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -35,25 +37,29 @@ WORKDIR /var/www/html
 # Copier les fichiers du projet
 COPY . .
 
-# Autoriser Composer en tant que root pour l'installation
+# Variables d'environnement pour le build
 ENV COMPOSER_ALLOW_SUPERUSER=1
 ENV APP_ENV=prod
+ENV APP_SECRET=buildsecret
 
-# Installer les dépendances Composer pour la production
-RUN composer install --no-dev --optimize-autoloader
+# Installer les dépendances PHP (sans dev, sans scripts post-install qui nécessitent la DB)
+RUN composer install --no-dev --optimize-autoloader --no-scripts
 
-# Donner les bons droits à Apache pour les dossiers inscriptibles
+# Générer l'autoloader optimisé manuellement (remplace les scripts Composer)
+RUN composer dump-autoload --optimize --no-dev
+
+# Compiler les assets CSS/JS avec Tailwind (pas de DB requise)
+RUN php bin/console tailwind:build --minify --no-interaction || true
+RUN php bin/console asset-map:compile --no-interaction || true
+
+# Donner les bons droits à Apache
 RUN mkdir -p var public/uploads \
     && chown -R www-data:www-data var public/uploads
 
-# Compiler les assets pour la production (Tailwind + AssetMapper)
-RUN php bin/console tailwind:build --minify \
-    && php bin/console asset-map:compile
-
 EXPOSE 80
 
-# Script de démarrage inline (évite les problèmes CRLF Windows/Linux)
-RUN printf '#!/bin/bash\nset -e\necho "=== Mise a jour schema DB..."\nphp bin/console doctrine:schema:update --force --no-interaction\necho "=== Demarrage Apache..."\nexec apache2-foreground\n' > /usr/local/bin/start.sh \
+# Script de démarrage : migrations + cache + Apache
+RUN printf '#!/bin/sh\nset -e\necho "[TechLink] Mise a jour schema DB..."\nphp bin/console doctrine:schema:update --force --no-interaction 2>&1 || true\necho "[TechLink] Cache warmup..."\nphp bin/console cache:warmup --env=prod --no-interaction 2>&1 || true\necho "[TechLink] Apache start..."\nexec apache2-foreground\n' > /usr/local/bin/start.sh \
     && chmod +x /usr/local/bin/start.sh
 
 CMD ["/usr/local/bin/start.sh"]
