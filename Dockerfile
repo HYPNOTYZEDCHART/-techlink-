@@ -48,6 +48,9 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts
 # Générer l'autoloader optimisé manuellement (remplace les scripts Composer)
 RUN composer dump-autoload --optimize --no-dev
 
+# Installer les assets JS (Stimulus, Turbo, etc.) - remplace le script post-install
+RUN php bin/console importmap:install --no-interaction
+
 # Compiler les assets CSS/JS avec Tailwind (pas de DB requise)
 RUN php bin/console tailwind:build --minify --no-interaction || true
 RUN php bin/console asset-map:compile --no-interaction || true
