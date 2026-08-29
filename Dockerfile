@@ -52,8 +52,8 @@ RUN php bin/console tailwind:build --minify \
 
 EXPOSE 80
 
-# Script pour lancer les migrations puis démarrer Apache
-RUN echo '#!/bin/bash\nphp bin/console doctrine:schema:update --force\napache2-foreground' > /usr/local/bin/start.sh \
-    && chmod +x /usr/local/bin/start.sh
+# Script de démarrage : met à jour le schéma DB puis lance Apache
+COPY docker-start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
 
 CMD ["/usr/local/bin/start.sh"]
