@@ -57,6 +57,9 @@ RUN composer dump-autoload --optimize --no-dev
 # Installer les assets JS (Stimulus, Turbo, etc.) - remplace le script post-install
 RUN php bin/console importmap:install --no-interaction
 
+# Installer les assets des bundles (EasyAdmin, etc.)
+RUN php bin/console assets:install public --no-interaction
+
 # Compiler les assets CSS/JS avec Tailwind (pas de DB requise)
 RUN php bin/console tailwind:build --minify --no-interaction || true
 RUN php bin/console asset-map:compile --no-interaction || true
