@@ -1,9 +1,10 @@
-services:
-  # 1. Base de données PostgreSQL managée (Supportée en plan gratuit avec persistance)
-  - type: psql
-    name: mon-projet-db
+databases:
+  # 1. Base de données PostgreSQL managée
+  - name: mon-projet-db
     plan: free
     postgresMajorVersion: 16
+
+services:
 
   # 2. Application Web Docker
   - type: web
