@@ -5,6 +5,9 @@ RUN apt-get update && apt-get install -y \
     libicu-dev \
     libpq-dev \
     libzip-dev \
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
+    libpng-dev \
     unzip \
     git \
     nodejs \
@@ -12,13 +15,16 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Installer les extensions PHP
-RUN docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
     && docker-php-ext-install \
     intl \
     pdo_pgsql \
     pgsql \
     zip \
-    opcache
+    opcache \
+    gd \
+    exif
 
 # Activer le mod_rewrite pour Apache
 RUN a2enmod rewrite
