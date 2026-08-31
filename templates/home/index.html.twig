@@ -32,6 +32,12 @@
                         // Play silently failed, often due to Low Power Mode
                     });
                     
+                    // Forcer la boucle si l'attribut loop natif échoue
+                    video.addEventListener('ended', function() {
+                        video.currentTime = 0;
+                        video.play();
+                    }, false);
+                    
                     // Réessayer de lancer la vidéo à la première interaction utilisateur
                     document.body.addEventListener('touchstart', function() {
                         if (video.paused) video.play();
