@@ -43,8 +43,12 @@ public function wishlist(WishlistManager $wishlistManager): Response
 
 #[Route('/favoris/toggle/{id}', name: 'app_wishlist_toggle', methods: ['POST'])]
 #[IsGranted('ROLE_USER')]
-public function toggleWishlist(Product $product, WishlistManager $wishlistManager): Response
+public function toggleWishlist(Product $product, WishlistManager $wishlistManager, \Symfony\Component\HttpFoundation\Request $request): Response
 {
+    if (!$this->isCsrfTokenValid('wishlist_toggle_' . $product->getId(), $request->headers->get('X-CSRF-TOKEN'))) {
+        return $this->json(['error' => 'Token CSRF invalide.'], 403);
+    }
+
     $added = $wishlistManager->toggle($this->getUser(), $product);
 
     return $this->json(['added' => $added]);

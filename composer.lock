@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a5dfa5076626ace7165f79c6fc01030f",
+    "content-hash": "59c496fd5147cd5e515de1f8e43dd360",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -1506,16 +1506,16 @@
         },
         {
             "name": "easycorp/easyadmin-bundle",
-            "version": "v5.2.0",
+            "version": "v5.5.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/EasyCorp/EasyAdminBundle.git",
-                "reference": "3dbd21a0d2397948e457ce46eb3b5e946c2f021b"
+                "reference": "77b2a6b13c7050cd5412b3ce2b86e909682b97c3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/EasyCorp/EasyAdminBundle/zipball/3dbd21a0d2397948e457ce46eb3b5e946c2f021b",
-                "reference": "3dbd21a0d2397948e457ce46eb3b5e946c2f021b",
+                "url": "https://api.github.com/repos/EasyCorp/EasyAdminBundle/zipball/77b2a6b13c7050cd5412b3ce2b86e909682b97c3",
+                "reference": "77b2a6b13c7050cd5412b3ce2b86e909682b97c3",
                 "shasum": ""
             },
             "require": {
@@ -1604,7 +1604,7 @@
             ],
             "support": {
                 "issues": "https://github.com/EasyCorp/EasyAdminBundle/issues",
-                "source": "https://github.com/EasyCorp/EasyAdminBundle/tree/v5.2.0"
+                "source": "https://github.com/EasyCorp/EasyAdminBundle/tree/v5.5.1"
             },
             "funding": [
                 {
@@ -1612,7 +1612,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-07-12T17:31:48+00:00"
+            "time": "2026-08-11T06:28:56+00:00"
         },
         {
             "name": "egulias/email-validator",

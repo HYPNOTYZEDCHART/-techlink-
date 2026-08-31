@@ -75,6 +75,7 @@
                             type="button"
                             data-controller="wishlist-toggle"
                             data-wishlist-toggle-url-value="{{ path('app_wishlist_toggle', {id: product.id}) }}"
+                            data-wishlist-toggle-token-value="{{ csrf_token('wishlist_toggle_' ~ product.id) }}"
                             data-action="click->wishlist-toggle#toggle"
                             class="absolute top-3 right-3 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-neutral-900/80 backdrop-blur-sm border border-neutral-700 hover:border-orange-500 transition group/wishlist"
                         >

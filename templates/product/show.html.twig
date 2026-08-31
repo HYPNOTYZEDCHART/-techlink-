@@ -79,6 +79,7 @@
                     type="button"
                     data-controller="wishlist-toggle"
                     data-wishlist-toggle-url-value="{{ path('app_wishlist_toggle', {id: product.id}) }}"
+                    data-wishlist-toggle-token-value="{{ csrf_token('wishlist_toggle_' ~ product.id) }}"
                     data-action="click->wishlist-toggle#toggle"
                     class="flex items-center gap-2 text-sm text-neutral-400 hover:text-orange-500 transition"
                 >
@@ -120,6 +121,7 @@
             </p>
 
                 <form method="post" action="{{ path('app_cart_add', {id: product.id}) }}" data-controller="add-to-cart-toast">
+                    <input type="hidden" name="_token" value="{{ csrf_token('cart_add_' ~ product.id) }}">
                     <div class="mb-6">
                         <p class="text-sm text-neutral-400 mb-3">Quantité</p>
                         <div class="flex items-center gap-3 w-fit border border-neutral-700 rounded-full px-2 py-1">

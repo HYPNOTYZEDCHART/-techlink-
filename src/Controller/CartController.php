@@ -37,6 +37,13 @@ final class CartController extends AbstractController
     $color = $request->request->get('color');
     $quantity = max(1, (int) $request->request->get('quantity', 1));
 
+    if (!$this->isCsrfTokenValid('cart_add_' . $product->getId(), $request->request->get('_token'))) {
+        if ($request->isXmlHttpRequest()) {
+            return $this->json(['error' => 'Token CSRF invalide.'], 403);
+        }
+        throw $this->createAccessDeniedException('Token CSRF invalide.');
+    }
+
     if ($quantity > $product->getStock()) {
         $this->addFlash('error', 'Stock insuffisant : il ne reste que ' . $product->getStock() . ' unité(s).');
         return $this->redirectToRoute('app_product_show', ['slug' => $product->getSlug()]);
@@ -118,6 +125,11 @@ final class CartController extends AbstractController
             $address = $request->request->get('address');
             $phone = $request->request->get('phone');
             $deliveryFee = (int) $request->request->get('delivery_fee', 0);
+            $allowedFees = [1500, 2000, 2500, 3000, 5000];
+            
+            if ($deliveryFee !== 0 && !in_array($deliveryFee, $allowedFees, true)) {
+                throw $this->createAccessDeniedException('Frais de livraison invalides.');
+            }
             
             $guestEmail = $request->request->get('guest_email');
             $guestFirstName = $request->request->get('guest_first_name');

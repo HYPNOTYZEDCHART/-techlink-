@@ -3,7 +3,7 @@ import { Controller } from '@hotwired/stimulus';
 /* stimulusFetch: 'lazy' */
 export default class extends Controller {
     static targets = ['icon']
-    static values = { url: String }
+    static values = { url: String, token: String }
 
     async toggle(event) {
         event.preventDefault()
@@ -11,7 +11,10 @@ export default class extends Controller {
 
         const response = await fetch(this.urlValue, {
             method: 'POST',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            headers: { 
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': this.tokenValue
+            },
         })
 
         if (response.redirected || !response.ok) {
