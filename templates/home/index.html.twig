@@ -28,20 +28,34 @@
                 if (video) {
                     video.muted = true;
                     video.defaultMuted = true;
-                    video.play().catch(function() {
-                        // Play silently failed, often due to Low Power Mode
-                    });
+                    
+                    var forcePlay = function() {
+                        if (video.paused) {
+                            video.play().catch(function() {});
+                        }
+                    };
+
+                    forcePlay();
                     
                     // Forcer la boucle si l'attribut loop natif échoue
                     video.addEventListener('ended', function() {
                         video.currentTime = 0;
-                        video.play();
+                        forcePlay();
                     }, false);
                     
-                    // Réessayer de lancer la vidéo à la première interaction utilisateur
-                    document.body.addEventListener('touchstart', function() {
-                        if (video.paused) video.play();
-                    }, { once: true });
+                    // Reprendre après changement d'onglet ou de mise en veille
+                    document.addEventListener('visibilitychange', function() {
+                        if (document.visibilityState === 'visible') {
+                            forcePlay();
+                        }
+                    });
+                    
+                    // Relancer à chaque interaction (défilement, tap) si la vidéo a été mise en pause par le système
+                    document.body.addEventListener('touchstart', forcePlay, { passive: true });
+                    document.body.addEventListener('click', forcePlay, { passive: true });
+                    
+                    // Mesure ultime : surveiller l'état de la vidéo (prévient les arrêts inexpliqués sur iOS)
+                    setInterval(forcePlay, 2000);
                 }
             });
         </script>
