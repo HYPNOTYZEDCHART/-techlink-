@@ -80,7 +80,7 @@
     </div>
 
     <nav class="border-t border-neutral-800">
-        <div class="max-w-7xl mx-auto px-6 flex items-center gap-8 text-sm">
+        <div class="max-w-7xl mx-auto px-6 flex items-center gap-4 md:gap-8 text-sm">
             <details class="relative py-3">
                 <summary class="cursor-pointer whitespace-nowrap hover:text-orange-500 transition list-none flex items-center gap-2 font-semibold">
                     ☰ <span class="hidden md:inline">Toutes les catégories</span><span class="md:hidden">Menu</span>
@@ -128,7 +128,7 @@
                 </form>
             </details>
 
-            <div class="flex items-center gap-8 overflow-x-auto">
+            <div class="flex items-center gap-4 md:gap-8 overflow-x-auto pb-1 scrollbar-hide">
                 {% for category in all_categories() %}
                     <a href="{{ path('app_product_index', {categorie: category.slug}) }}" class="py-3 whitespace-nowrap hover:text-orange-500 transition">
                         {{ category.name }}
