@@ -1,9 +1,9 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}<span class="text-neutral-500">&lt;/</span>techlink<span class="text-neutral-500">&gt;</span> — La tech pro, livrée vite à Dakar{% endblock %}
+{% block title %}TechLink — La tech pro, livrée vite à Dakar{% endblock %}
 
 {% block body %}
-    <section class="relative py-32 px-6 overflow-hidden flex items-center min-h-[80vh] bg-neutral-900">
+    <section class="relative py-32 px-6 overflow-hidden flex items-center min-h-[80vh] bg-neutral-950">
         <!-- Vidéo en arrière-plan -->
         <style>
             video::-webkit-media-controls-start-playback-button {
@@ -16,46 +16,47 @@
             autoplay 
             loop 
             muted 
-            playsinline="true" 
+            playsinline 
             webkit-playsinline="true"
-            class="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
+            preload="metadata"
+            class="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none opacity-85 transition-opacity duration-700"
         >
             <source src="{{ asset('videos/hero-tech.mp4') }}" type="video/mp4">
         </video>
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 var video = document.getElementById('hero-video');
-                if (video) {
-                    video.muted = true;
-                    video.defaultMuted = true;
-                    
-                    var forcePlay = function() {
-                        if (video.paused) {
-                            video.play().catch(function() {});
-                        }
-                    };
+                if (!video) return;
 
-                    forcePlay();
-                    
-                    // Forcer la boucle si l'attribut loop natif échoue
-                    video.addEventListener('ended', function() {
-                        video.currentTime = 0;
-                        forcePlay();
-                    }, false);
-                    
-                    // Reprendre après changement d'onglet ou de mise en veille
-                    document.addEventListener('visibilitychange', function() {
-                        if (document.visibilityState === 'visible') {
-                            forcePlay();
-                        }
+                video.muted = true;
+                video.defaultMuted = true;
+
+                var playPromise = video.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(function() {
+                        // iOS Low Power Mode or autoplay policy: listen once on first user gesture
+                        var resumeOnGesture = function() {
+                            video.play().catch(function() {});
+                            window.removeEventListener('touchstart', resumeOnGesture);
+                            window.removeEventListener('click', resumeOnGesture);
+                        };
+                        window.addEventListener('touchstart', resumeOnGesture, { passive: true, once: true });
+                        window.addEventListener('click', resumeOnGesture, { passive: true, once: true });
                     });
-                    
-                    // Relancer à chaque interaction (défilement, tap) si la vidéo a été mise en pause par le système
-                    document.body.addEventListener('touchstart', forcePlay, { passive: true });
-                    document.body.addEventListener('click', forcePlay, { passive: true });
-                    
-                    // Mesure ultime : surveiller l'état de la vidéo (prévient les arrêts inexpliqués sur iOS)
-                    setInterval(forcePlay, 2000);
+                }
+
+                // IntersectionObserver: Pause video when scrolled out of view to save mobile battery
+                if ('IntersectionObserver' in window) {
+                    var observer = new IntersectionObserver(function(entries) {
+                        entries.forEach(function(entry) {
+                            if (entry.isIntersecting) {
+                                if (video.paused) video.play().catch(function() {});
+                            } else {
+                                if (!video.paused) video.pause();
+                            }
+                        });
+                    }, { threshold: 0.2 });
+                    observer.observe(video);
                 }
             });
         </script>

@@ -1,17 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
 use App\Entity\CartItem;
-use App\Entity\Product;
-use App\Service\CartManager;
 use App\Entity\CustomerOrder;
+use App\Entity\Product;
+use App\Repository\CustomerOrderRepository;
+use App\Service\CartManager;
+use App\Service\CouponManager;
+use App\Service\InvoiceGenerator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
-use App\Service\InvoiceGenerator;
 
 final class CartController extends AbstractController
 {
@@ -20,7 +24,7 @@ final class CartController extends AbstractController
     {
         $session = $request->getSession();
         $sessionId = $session->getId();
-        
+
         $items = $cartManager->getItems($this->getUser());
         $total = $cartManager->getTotalPrice($this->getUser());
 
@@ -33,50 +37,42 @@ final class CartController extends AbstractController
 
     #[Route('/panier/ajouter/{id}', name: 'app_cart_add', methods: ['POST'])]
     public function add(Product $product, Request $request, CartManager $cartManager): Response
-{
-    $color = $request->request->get('color');
-    $quantity = max(1, (int) $request->request->get('quantity', 1));
-
-    if (!$this->isCsrfTokenValid('cart_add_' . $product->getId(), $request->request->get('_token'))) {
-        if ($request->isXmlHttpRequest()) {
-            return $this->json(['error' => 'Token CSRF invalide.'], 403);
-        }
-        throw $this->createAccessDeniedException('Token CSRF invalide.');
-    }
-
-    if ($quantity > $product->getStock()) {
-        $this->addFlash('error', 'Stock insuffisant : il ne reste que ' . $product->getStock() . ' unité(s).');
-        return $this->redirectToRoute('app_product_show', ['slug' => $product->getSlug()]);
-    }
-
-    $cartManager->addProduct($this->getUser(), $product, $quantity, $color);
-
-    if ($request->isXmlHttpRequest()) {
-        return $this->json([
-            'success' => true,
-            'message' => $product->getName() . ' ajouté au panier',
-            'cartCount' => $cartManager->getTotalItemCount($this->getUser()),
-        ]);
-    }
-
-    $this->addFlash('success', $product->getName() . ' ajouté au panier');
-    return $this->redirectToRoute('app_product_show', ['slug' => $product->getSlug()]);
-}
-
-    private function checkCartItemAccess(CartItem $cartItem, Request $request): void
     {
-        $session = $request->getSession();
-        $isOwner = false;
-        
-        if ($this->getUser() && $cartItem->getUser() === $this->getUser()) {
-            $isOwner = true;
-        } elseif (!$this->getUser() && !$cartItem->getUser() && $cartItem->getSessionId() === $session->getId()) {
-            $isOwner = true;
+        $color = $request->request->get('color');
+        $quantity = max(1, (int) $request->request->get('quantity', 1));
+
+        if (!$this->isCsrfTokenValid('cart_add_' . $product->getId(), $request->request->get('_token'))) {
+            if ($request->isXmlHttpRequest()) {
+                return $this->json(['error' => 'Token CSRF invalide.'], 403);
+            }
+            throw $this->createAccessDeniedException('Token CSRF invalide.');
         }
 
-        if (!$isOwner) {
-            throw $this->createAccessDeniedException('Vous ne pouvez pas modifier ce panier.');
+        if ($quantity > $product->getStock()) {
+            $this->addFlash('error', 'Stock insuffisant : il ne reste que ' . $product->getStock() . ' unité(s).');
+            return $this->redirectToRoute('app_product_show', ['slug' => $product->getSlug()]);
         }
+
+        try {
+            $cartManager->addProduct($this->getUser(), $product, $quantity, $color);
+        } catch (\LogicException $e) {
+            if ($request->isXmlHttpRequest()) {
+                return $this->json(['error' => $e->getMessage()], 400);
+            }
+            $this->addFlash('error', $e->getMessage());
+            return $this->redirectToRoute('app_product_show', ['slug' => $product->getSlug()]);
+        }
+
+        if ($request->isXmlHttpRequest()) {
+            return $this->json([
+                'success' => true,
+                'cartCount' => $cartManager->getTotalItemCount($this->getUser()),
+                'message' => sprintf('"%s" a été ajouté à votre panier.', $product->getName()),
+            ]);
+        }
+
+        $this->addFlash('success', 'Produit ajouté au panier.');
+        return $this->redirectToRoute('app_cart');
     }
 
     #[Route('/panier/modifier/{id}', name: 'app_cart_update', methods: ['POST'])]
@@ -102,10 +98,26 @@ final class CartController extends AbstractController
         }
 
         $this->checkCartItemAccess($cartItem, $request);
-        
+
         $cartManager->removeItem($cartItem);
 
         return $this->redirectToRoute('app_cart');
+    }
+
+    #[Route('/panier/coupon/verifier', name: 'app_cart_coupon_check', methods: ['POST'])]
+    public function checkCoupon(Request $request, CartManager $cartManager, CouponManager $couponManager): JsonResponse
+    {
+        $code = (string) $request->request->get('code', '');
+        $subtotal = $cartManager->getTotalPrice($this->getUser());
+
+        $result = $couponManager->applyCoupon($code, $subtotal);
+
+        return $this->json([
+            'valid' => $result['valid'],
+            'discount' => $result['discount'],
+            'message' => $result['message'],
+            'code' => strtoupper(trim($code)),
+        ]);
     }
 
     #[Route('/panier/commander', name: 'app_cart_checkout', methods: ['GET', 'POST'])]
@@ -117,42 +129,69 @@ final class CartController extends AbstractController
             return $this->redirectToRoute('app_cart');
         }
 
+        $subtotal = $cartManager->getTotalPrice($this->getUser());
+
         if ($request->isMethod('POST')) {
             if (!$this->isCsrfTokenValid('cart_checkout', $request->request->get('_token'))) {
                 throw $this->createAccessDeniedException('Token CSRF invalide.');
             }
 
-            $address = $request->request->get('address');
-            $phone = $request->request->get('phone');
-            $deliveryFee = (int) $request->request->get('delivery_fee', 0);
-            $allowedFees = [1500, 2000, 2500, 3000, 5000];
-            
-            if ($deliveryFee !== 0 && !in_array($deliveryFee, $allowedFees, true)) {
-                throw $this->createAccessDeniedException('Frais de livraison invalides.');
+            $deliveryMethod = (string) $request->request->get('delivery_method', CustomerOrder::DELIVERY_METHOD_TIAK_TIAK);
+            $paymentMethod = (string) $request->request->get('payment_method', CustomerOrder::PAYMENT_METHOD_CASH);
+            $phone = (string) $request->request->get('phone');
+            $address = (string) $request->request->get('address', '');
+            $notes = $request->request->get('notes');
+            $couponCode = $request->request->get('coupon_code');
+
+            $deliveryFee = 0;
+            if ($deliveryMethod === CustomerOrder::DELIVERY_METHOD_TIAK_TIAK) {
+                $deliveryFee = (int) $request->request->get('delivery_fee', 0);
+                $allowedFees = [1500, 2000, 2500, 3000, 5000];
+                if (!in_array($deliveryFee, $allowedFees, true)) {
+                    throw $this->createAccessDeniedException('Zone de livraison invalide.');
+                }
+            } else {
+                $address = 'Retrait en boutique — TechLink Dakar Plateau';
             }
-            
+
             $guestEmail = $request->request->get('guest_email');
             $guestFirstName = $request->request->get('guest_first_name');
             $guestLastName = $request->request->get('guest_last_name');
 
-            $order = $cartManager->checkout($this->getUser(), $address, $phone, $guestEmail, $guestFirstName, $guestLastName, $deliveryFee);
+            try {
+                $order = $cartManager->checkout(
+                    user: $this->getUser(),
+                    deliveryAddress: $address,
+                    deliveryPhone: $phone,
+                    guestEmail: $guestEmail ? (string) $guestEmail : null,
+                    guestFirstName: $guestFirstName ? (string) $guestFirstName : null,
+                    guestLastName: $guestLastName ? (string) $guestLastName : null,
+                    deliveryFee: $deliveryFee,
+                    paymentMethod: $paymentMethod,
+                    deliveryMethod: $deliveryMethod,
+                    couponCode: $couponCode ? (string) $couponCode : null,
+                    notes: $notes ? (string) $notes : null
+                );
+            } catch (\RuntimeException $e) {
+                $this->addFlash('error', $e->getMessage());
+                return $this->redirectToRoute('app_cart_checkout');
+            }
 
             return $this->redirectToRoute('app_order_confirmation', ['id' => $order->getId()]);
         }
 
         return $this->render('cart/checkout.html.twig', [
             'items' => $items,
-            'total' => $cartManager->getTotalPrice($this->getUser()),
+            'total' => $subtotal,
         ]);
     }
 
     #[Route('/commande/{id}/confirmation', name: 'app_order_confirmation')]
     public function confirmation(CustomerOrder $order, Request $request): Response
     {
-        // Allow if user is order's user OR if the session ID matches
         $session = $request->getSession();
         $isGuestOwner = !$order->getUser() && $order->getSessionId() === $session->getId();
-        
+
         if ($order->getUser() !== $this->getUser() && !$isGuestOwner) {
             throw $this->createAccessDeniedException();
         }
@@ -162,22 +201,51 @@ final class CartController extends AbstractController
         ]);
     }
 
+    #[Route('/suivi/{trackingNumber}', name: 'app_order_track', methods: ['GET'])]
+    public function track(string $trackingNumber, CustomerOrderRepository $orderRepository): Response
+    {
+        $order = $orderRepository->findOneBy(['trackingNumber' => strtoupper(trim($trackingNumber))]);
+
+        if (!$order) {
+            $this->addFlash('error', 'Numéro de suivi introuvable. Veuillez vérifier votre référence de commande.');
+            return $this->redirectToRoute('app_home');
+        }
+
+        return $this->render('cart/track.html.twig', [
+            'order' => $order,
+        ]);
+    }
+
     #[Route('/commande/{id}/facture', name: 'app_order_invoice')]
     public function invoice(CustomerOrder $order, InvoiceGenerator $invoiceGenerator, Request $request): Response
     {
-        // Allow if user is order's user OR if the session ID matches
         $session = $request->getSession();
         $isGuestOwner = !$order->getUser() && $order->getSessionId() === $session->getId();
-        
+
         if ($order->getUser() !== $this->getUser() && !$isGuestOwner) {
             throw $this->createAccessDeniedException();
         }
 
-    $pdf = $invoiceGenerator->generate($order);
+        $pdf = $invoiceGenerator->generate($order);
 
-    return new Response($pdf, 200, [
-        'Content-Type' => 'application/pdf',
-        'Content-Disposition' => 'attachment; filename="facture-' . $order->getId() . '.pdf"',
-    ]);
-}
+        return new Response($pdf, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="facture-' . ($order->getTrackingNumber() ?? (string) $order->getId()) . '.pdf"',
+        ]);
+    }
+
+    private function checkCartItemAccess(CartItem $cartItem, Request $request): void
+    {
+        $user = $this->getUser();
+        if ($user) {
+            if ($cartItem->getUser() !== $user) {
+                throw $this->createAccessDeniedException('Accès refusé à cet article.');
+            }
+        } else {
+            $sessionId = $request->getSession()->getId();
+            if ($cartItem->getSessionId() !== $sessionId) {
+                throw $this->createAccessDeniedException('Accès refusé à cet article.');
+            }
+        }
+    }
 }

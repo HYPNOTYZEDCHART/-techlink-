@@ -1,0 +1,76 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Suivi de colis {{ order.trackingNumber }} — TechLink Dakar{% endblock %}
+
+{% block body %}
+<section class="max-w-3xl mx-auto px-4 md:px-6 py-12">
+    <div class="mb-8">
+        <a href="{{ path('app_home') }}" class="text-xs text-neutral-400 hover:text-white transition flex items-center gap-2 mb-3">
+            ← Retour à l'accueil
+        </a>
+        <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white">
+            Suivi de votre commande
+        </h1>
+        <p class="text-xs text-neutral-400 mt-1">
+            Mises à jour en direct de l'acheminement de votre colis à Dakar.
+        </p>
+    </div>
+
+    <!-- Carte Statut & Référence -->
+    <div class="bg-neutral-900/60 border border-neutral-800 rounded-3xl p-6 md:p-8 mb-8 shadow-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-neutral-800">
+            <div>
+                <span class="text-xs text-neutral-500 font-medium">Référence colis :</span>
+                <p class="text-lg font-mono font-bold text-orange-400">{{ order.trackingNumber }}</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-semibold px-3 py-1.5 rounded-full {% if order.status == 'delivered' %}bg-green-500/10 text-green-400 border border-green-500/20{% else %}bg-orange-500/10 text-orange-400 border border-orange-500/20{% endif %}">
+                    {% if order.status == 'pending' %}En attente
+                    {% elseif order.status == 'paid_escrow' %}Séquestre validé
+                    {% elseif order.status == 'preparing' %}En préparation
+                    {% elseif order.status == 'shipped_tiak_tiak' %}En route Tiak-Tiak
+                    {% elseif order.status == 'delivered' %}Livrée & Validée
+                    {% elseif order.status == 'cancelled' %}Annulée
+                    {% else %}{{ order.status }}{% endif %}
+                </span>
+            </div>
+        </div>
+
+        <!-- Stepper Timeline -->
+        <div class="mt-8 relative pl-6 border-l-2 border-neutral-800 space-y-6">
+            {% for tracking in order.orderTrackings %}
+                <div class="relative">
+                    <div class="absolute -left-[31px] top-0 w-3.5 h-3.5 rounded-full {% if loop.last %}bg-orange-500 ring-4 ring-orange-500/20 animate-pulse{% else %}bg-neutral-700{% endif %}"></div>
+                    <div>
+                        <div class="flex flex-wrap items-baseline gap-2">
+                            <span class="text-sm font-bold text-white">{{ tracking.title }}</span>
+                            <span class="text-[11px] text-neutral-500 font-mono">{{ tracking.timestamp|date('d/m/Y à H:i') }}</span>
+                        </div>
+                        {% if tracking.comment %}
+                            <p class="text-xs text-neutral-400 mt-1 leading-relaxed">{{ tracking.comment }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Contact Support -->
+    <div class="bg-neutral-900/30 border border-neutral-800/80 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+            <h3 class="text-sm font-bold text-white mb-0.5">Besoin de modifier l'adresse ou l'horaire ?</h3>
+            <p class="text-xs text-neutral-400">Notre équipe logistique vous répond immédiatement sur WhatsApp.</p>
+        </div>
+        {% set tracking_msg = "Bonjour TechLink, je vous contacte concernant le suivi de ma commande " ~ order.trackingNumber %}
+        <a 
+            href="https://wa.me/221770000000?text={{ tracking_msg|url_encode }}" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            class="bg-green-600 hover:bg-green-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition active:scale-95 flex items-center gap-2 whitespace-nowrap shadow-lg shadow-green-600/20"
+        >
+            <span>💬</span>
+            <span>Contacter le support</span>
+        </a>
+    </div>
+</section>
+{% endblock %}

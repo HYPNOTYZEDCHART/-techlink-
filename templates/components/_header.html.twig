@@ -81,12 +81,14 @@
 
     <nav class="border-t border-neutral-800">
         <div class="max-w-7xl mx-auto px-6 flex items-center gap-4 md:gap-8 text-sm">
-            <details class="relative py-3">
+            <details class="relative py-3" data-controller="dropdown">
                 <summary class="cursor-pointer whitespace-nowrap hover:text-orange-500 transition list-none flex items-center gap-2 font-semibold">
-                    ☰ <span class="hidden md:inline">Toutes les catégories</span><span class="md:hidden">Menu</span>
+                    <span class="text-base">☰</span>
+                    <span class="hidden md:inline">Toutes les catégories</span>
+                    <span class="md:hidden">Menu</span>
                 </summary>
                 <form action="{{ path('app_product_index') }}" method="get">
-                    <div class="absolute left-0 top-full mt-1 bg-neutral-950 border border-neutral-800 rounded-xl shadow-xl p-6 z-50 flex flex-col md:grid md:grid-cols-3 gap-8" style="width: 800px; max-width: 90vw;">
+                    <div class="fixed left-3 right-3 top-28 md:absolute md:top-full md:left-0 md:right-auto md:w-[760px] max-w-[calc(100vw-1.5rem)] bg-neutral-950/98 backdrop-blur-2xl border border-neutral-800 rounded-2xl shadow-2xl p-6 z-50 flex flex-col md:grid md:grid-cols-3 gap-6">
                         <div>
                             <p class="text-xs text-neutral-500 uppercase tracking-wide mb-4 font-semibold">Catégorie</p>
                             <div class="flex flex-col gap-3 max-h-64 overflow-y-auto custom-scrollbar pr-2">

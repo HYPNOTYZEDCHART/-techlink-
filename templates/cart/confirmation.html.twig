@@ -1,30 +1,174 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Commande confirmée — TechLink{% endblock %}
+{% block title %}Commande {{ order.trackingNumber ?? ('#' ~ order.id) }} confirmée — TechLink{% endblock %}
 
 {% block body %}
-    <section class="max-w-2xl mx-auto px-6 py-16 text-center">
-        <div class="text-6xl mb-6">✅</div>
-        <h1 class="text-3xl font-bold mb-2">Commande confirmée !</h1>
-        <p class="text-neutral-500 mb-8">
-            Commande n°{{ order.id }} — nous te contactons bientôt au {{ order.deliveryPhone }} pour finaliser la livraison.
+<section class="max-w-3xl mx-auto px-4 md:px-6 py-12">
+    <!-- Header de Confirmation -->
+    <div class="bg-neutral-900/60 border border-neutral-800 rounded-3xl p-6 md:p-8 text-center mb-8 relative overflow-hidden shadow-2xl">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 mb-4 text-2xl">
+            ✓
+        </div>
+        <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white mb-2">
+            Commande confirmée avec succès !
+        </h1>
+        <p class="text-sm text-neutral-400 max-w-md mx-auto">
+            Merci pour votre confiance. Votre commande est prise en charge par notre équipe à Dakar.
         </p>
 
-        <div class="border border-neutral-800 rounded-2xl p-6 text-left mb-8">
-            {% for item in order.orderItems %}
-                <div class="flex justify-between text-sm py-2 {% if not loop.last %}border-b border-neutral-800{% endif %}">
-                    <span>{{ item.product.name }}{% if item.selectedColor %} ({{ item.selectedColor }}){% endif %} × {{ item.quantity }}</span>
-                    <span class="text-neutral-400">{{ (item.unitPrice * item.quantity)|number_format(0, ',', ' ') }} XOF</span>
+        <div class="mt-6 inline-flex flex-wrap items-center justify-center gap-3 bg-neutral-950/80 border border-neutral-800 px-4 py-2 rounded-xl">
+            <span class="text-xs text-neutral-500 font-medium">Numéro de suivi :</span>
+            <span class="text-sm font-mono font-bold text-orange-400 tracking-wider">
+                {{ order.trackingNumber ?? ('TL-' ~ order.id) }}
+            </span>
+            <span class="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-neutral-800 text-neutral-300">
+                {{ order.deliveryMethod == 'PICKUP' ? 'Retrait boutique' : 'Coursier Tiak-Tiak' }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Stepper Timeline Événementiel (Inspiré OpenBoutik Tracking) -->
+    <div class="bg-neutral-900/40 border border-neutral-800 rounded-3xl p-6 md:p-8 mb-8">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-base font-bold text-white flex items-center gap-2">
+                <span>📍</span> Suivi d'acheminement en temps réel
+            </h2>
+            <span class="text-xs font-semibold px-2.5 py-1 rounded-full {% if order.status == 'delivered' %}bg-green-500/10 text-green-400 border border-green-500/20{% else %}bg-orange-500/10 text-orange-400 border border-orange-500/20{% endif %}">
+                {% if order.status == 'pending' %}Enregistrée
+                {% elseif order.status == 'paid_escrow' %}Séquestre validé
+                {% elseif order.status == 'preparing' %}En préparation
+                {% elseif order.status == 'shipped_tiak_tiak' %}En route Tiak-Tiak
+                {% elseif order.status == 'delivered' %}Livrée & Validée
+                {% elseif order.status == 'cancelled' %}Annulée
+                {% else %}{{ order.status }}{% endif %}
+            </span>
+        </div>
+
+        <!-- Timeline Steps -->
+        <div class="relative pl-6 border-l-2 border-neutral-800 space-y-6">
+            {% for tracking in order.orderTrackings %}
+                <div class="relative group">
+                    <!-- Dot -->
+                    <div class="absolute -left-[31px] top-0 w-3.5 h-3.5 rounded-full {% if loop.last %}bg-orange-500 ring-4 ring-orange-500/20 animate-pulse{% else %}bg-neutral-700{% endif %}"></div>
+                    
+                    <div>
+                        <div class="flex flex-wrap items-baseline gap-2">
+                            <span class="text-sm font-bold text-white">{{ tracking.title }}</span>
+                            <span class="text-[11px] text-neutral-500 font-mono">{{ tracking.timestamp|date('d/m/Y à H:i') }}</span>
+                        </div>
+                        {% if tracking.comment %}
+                            <p class="text-xs text-neutral-400 mt-1 leading-relaxed">{{ tracking.comment }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="relative">
+                    <div class="absolute -left-[31px] top-0 w-3.5 h-3.5 rounded-full bg-orange-500 ring-4 ring-orange-500/20"></div>
+                    <span class="text-sm font-bold text-white">Commande initialisée</span>
+                    <p class="text-xs text-neutral-400 mt-1">Prise en charge en cours par l'équipe logistique.</p>
                 </div>
             {% endfor %}
-            <div class="flex justify-between font-bold pt-4 mt-2 border-t border-neutral-800">
-                <span>Total</span>
-                <span class="text-orange-500">{{ order.total|number_format(0, ',', ' ') }} XOF</span>
+        </div>
+    </div>
+
+    <!-- Détails & Récapitulatif -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <!-- Informations Livraison & Contact -->
+        <div class="bg-neutral-900/40 border border-neutral-800 rounded-2xl p-6 flex flex-col justify-between">
+            <div>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-neutral-400 mb-3">Destinataire & Adresse</h3>
+                <p class="text-sm font-semibold text-white">
+                    {% if order.user %}
+                        {{ order.user.firstName }} {{ order.user.lastName }}
+                    {% else %}
+                        {{ order.guestFirstName }} {{ order.guestLastName }}
+                    {% endif %}
+                </p>
+                <p class="text-xs text-neutral-400 mt-1 font-mono">Tél : {{ order.deliveryPhone }}</p>
+                <p class="text-xs text-neutral-300 mt-2 leading-relaxed bg-neutral-950 p-3 rounded-xl border border-neutral-850">
+                    {{ order.deliveryAddress }}
+                </p>
+                {% if order.notes %}
+                    <p class="text-[11px] text-neutral-400 mt-2 italic">Note livreur : {{ order.notes }}</p>
+                {% endif %}
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-neutral-800/80 flex items-center justify-between text-xs">
+                <span class="text-neutral-500">Mode :</span>
+                <span class="font-medium text-neutral-300">
+                    {{ order.deliveryMethod == 'PICKUP' ? 'Retrait Boutique Plateau' : 'Coursier Express Tiak-Tiak' }}
+                </span>
             </div>
         </div>
 
-        <a href="{{ path('app_product_index') }}" class="bg-white text-black font-semibold px-6 py-3 rounded-full hover:bg-orange-500 transition">
+        <!-- Paiement & Séquestre -->
+        <div class="bg-neutral-900/40 border border-neutral-800 rounded-2xl p-6 flex flex-col justify-between">
+            <div>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-neutral-400 mb-3">Détails Financiers & Séquestre</h3>
+                
+                <div class="flex items-center justify-between py-1 text-xs">
+                    <span class="text-neutral-400">Paiement :</span>
+                    <span class="font-bold text-white">
+                        {% if order.paymentMethod == 'WAVE' %}Wave
+                        {% elseif order.paymentMethod == 'ORANGE_MONEY' %}Orange Money
+                        {% else %}Espèces à la livraison{% endif %}
+                    </span>
+                </div>
+
+                {% if order.couponCode %}
+                    <div class="flex items-center justify-between py-1 text-xs text-green-400">
+                        <span>Code Promo ({{ order.couponCode }}) :</span>
+                        <span class="font-mono">- {{ order.discountAmount|number_format(0, ',', ' ') }} XOF</span>
+                    </div>
+                {% endif %}
+
+                <div class="flex items-center justify-between py-1 text-xs">
+                    <span class="text-neutral-400">Frais de livraison :</span>
+                    <span class="font-mono text-neutral-300">{{ order.deliveryFee|number_format(0, ',', ' ') }} XOF</span>
+                </div>
+
+                <div class="flex items-center justify-between pt-3 mt-2 border-t border-neutral-800 text-sm font-extrabold">
+                    <span class="text-white">Montant Total :</span>
+                    <span class="font-mono text-orange-500 text-base">{{ order.total|number_format(0, ',', ' ') }} XOF</span>
+                </div>
+            </div>
+
+            {% if order.escrowStatus == 'HELD_IN_ESCROW' %}
+                <div class="mt-4 p-3 bg-neutral-950 rounded-xl border border-neutral-800 flex items-center gap-2.5 text-[11px] text-green-400">
+                    <span>🛡️</span>
+                    <span>Fonds sous séquestre sécurisé. Aucun débit anticipé non vérifié.</span>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Actions Rapides -->
+    <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+        <a 
+            href="{{ path('app_order_invoice', {id: order.id}) }}" 
+            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-bold px-6 py-3.5 rounded-xl transition active:scale-[0.98]"
+        >
+            <span>📄</span>
+            <span>Télécharger la Facture PDF</span>
+        </a>
+
+        {% set whatsapp_message = "Bonjour TechLink, je viens de passer la commande " ~ (order.trackingNumber ?? ('n°' ~ order.id)) ~ " d'un montant de " ~ (order.total|number_format(0, ',', ' ')) ~ " XOF. Pourriez-vous me confirmer le délai de passage du coursier ?" %}
+        <a 
+            href="https://wa.me/221770000000?text={{ whatsapp_message|url_encode }}" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 text-white text-xs font-bold px-6 py-3.5 rounded-xl transition active:scale-[0.98] shadow-lg shadow-green-600/20"
+        >
+            <span>💬</span>
+            <span>Assistance WhatsApp Express</span>
+        </a>
+
+        <a 
+            href="{{ path('app_product_index') }}" 
+            class="w-full sm:w-auto inline-flex items-center justify-center text-xs text-neutral-400 hover:text-white transition px-4 py-3.5"
+        >
             Continuer mes achats
         </a>
-    </section>
+    </div>
+</section>
 {% endblock %}

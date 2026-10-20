@@ -1,110 +1,314 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Finaliser la commande — TechLink{% endblock %}
+{% block title %}Finaliser la commande — TechLink Dakar{% endblock %}
 
 {% block body %}
-    <section class="max-w-2xl mx-auto px-6 py-12">
-        <h1 class="text-3xl font-bold mb-8">Finaliser ta commande</h1>
+<section 
+    class="max-w-4xl mx-auto px-4 md:px-6 py-10"
+    data-controller="checkout"
+    data-checkout-subtotal-value="{{ total }}"
+    data-checkout-coupon-check-url-value="{{ path('app_cart_coupon_check') }}"
+>
+    <div class="mb-8">
+        <a href="{{ path('app_cart') }}" class="text-xs text-neutral-400 hover:text-white transition flex items-center gap-2 mb-3">
+            ← Retour au panier
+        </a>
+        <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">Finaliser votre commande</h1>
+        <p class="text-sm text-neutral-400 mt-1">Livraison express en 24h à Dakar et paiement sécurisé.</p>
+    </div>
 
-        <div class="border border-neutral-800 rounded-2xl p-6 mb-8">
-            {% for item in items %}
-                <div class="flex justify-between text-sm py-2 {% if not loop.last %}border-b border-neutral-800{% endif %}">
-                    <span>{{ item.product.name }}{% if item.selectedColor %} ({{ item.selectedColor }}){% endif %} × {{ item.quantity }}</span>
-                    <span class="text-neutral-400">{{ (item.product.price * item.quantity)|number_format(0, ',', ' ') }} XOF</span>
-                </div>
-            {% endfor %}
-            <div class="flex justify-between font-bold pt-4 mt-2 border-t border-neutral-800">
-                <span>Sous-total</span>
-                <span class="text-white">{{ total|number_format(0, ',', ' ') }} XOF</span>
-            </div>
-            <div class="flex justify-between font-bold pt-2">
-                <span>Livraison</span>
-                <span class="text-neutral-400" id="delivery-display">Calculé à l'étape suivante</span>
-            </div>
-            <div class="flex justify-between font-bold pt-4 mt-2 border-t border-neutral-800 text-lg">
-                <span>Total</span>
-                <span class="text-orange-500" id="total-display" data-subtotal="{{ total }}">{{ total|number_format(0, ',', ' ') }} XOF</span>
-            </div>
-        </div>
+    <form method="post" class="grid grid-cols-1 lg:grid-cols-12 gap-8" data-controller="loading-button">
+        <input type="hidden" name="_token" value="{{ csrf_token('cart_checkout') }}">
+        <input type="hidden" name="delivery_method" value="TIAK_TIAK" data-checkout-target="deliveryMethodInput">
+        <input type="hidden" name="payment_method" value="WAVE" data-checkout-target="paymentMethodInput">
 
-        <form method="post" class="flex flex-col gap-5" data-controller="loading-button">
-            <input type="hidden" name="_token" value="{{ csrf_token('cart_checkout') }}">
-            
+        <!-- Formulaire principal (Gauche) -->
+        <div class="lg:col-span-7 flex flex-col gap-6">
+
+            <!-- 1. Informations client (si invité) -->
             {% if not app.user %}
-                <div class="border border-neutral-800 rounded-2xl p-6 bg-neutral-900/30 mb-2">
-                    <h2 class="font-bold mb-4">Informations personnelles</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-neutral-300 mb-4">1. Coordonnées client</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label for="guest_first_name" class="block text-sm text-neutral-400 mb-2">Prénom</label>
-                            <input type="text" name="guest_first_name" id="guest_first_name" required class="w-full bg-neutral-900 border border-neutral-700 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-orange-500">
+                            <label for="guest_first_name" class="block text-xs text-neutral-400 mb-1.5 font-medium">Prénom *</label>
+                            <input 
+                                type="text" 
+                                name="guest_first_name" 
+                                id="guest_first_name" 
+                                required 
+                                placeholder="Bécaye"
+                                class="w-full bg-neutral-950 border border-neutral-700/80 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-500 transition"
+                            >
                         </div>
                         <div>
-                            <label for="guest_last_name" class="block text-sm text-neutral-400 mb-2">Nom</label>
-                            <input type="text" name="guest_last_name" id="guest_last_name" required class="w-full bg-neutral-900 border border-neutral-700 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-orange-500">
+                            <label for="guest_last_name" class="block text-xs text-neutral-400 mb-1.5 font-medium">Nom *</label>
+                            <input 
+                                type="text" 
+                                name="guest_last_name" 
+                                id="guest_last_name" 
+                                required 
+                                placeholder="Doumbia"
+                                class="w-full bg-neutral-950 border border-neutral-700/80 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-500 transition"
+                            >
                         </div>
-                        <div class="md:col-span-2">
-                            <label for="guest_email" class="block text-sm text-neutral-400 mb-2">Email</label>
-                            <input type="email" name="guest_email" id="guest_email" class="w-full bg-neutral-900 border border-neutral-700 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-orange-500" placeholder="Pour le reçu (optionnel)">
+                        <div class="sm:col-span-2">
+                            <label for="guest_email" class="block text-xs text-neutral-400 mb-1.5 font-medium">Email (pour la facture PDF)</label>
+                            <input 
+                                type="email" 
+                                name="guest_email" 
+                                id="guest_email" 
+                                placeholder="contact@exemple.sn"
+                                class="w-full bg-neutral-950 border border-neutral-700/80 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-500 transition"
+                            >
                         </div>
                     </div>
                 </div>
             {% endif %}
 
-            <h2 class="font-bold">Livraison</h2>
-            <div>
-                <label for="delivery_fee" class="block text-sm text-neutral-400 mb-2">Zone de livraison</label>
-                <select name="delivery_fee" id="delivery_fee" required class="w-full bg-neutral-900 border border-neutral-700 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-orange-500" onchange="updateTotal()">
-                    <option value="" disabled selected>Choisir une zone</option>
-                    <option value="1500">Dakar - Centre & Plateau (1 500 XOF)</option>
-                    <option value="2000">Dakar - Almadies / Ngor / Ouakam (2 000 XOF)</option>
-                    <option value="2500">Dakar - Parcelles / Guédiawaye (2 500 XOF)</option>
-                    <option value="3000">Dakar - Pikine / Rufisque / Keur Massar (3 000 XOF)</option>
-                    <option value="5000">Régions (5 000 XOF)</option>
-                </select>
-            </div>
-            <div>
-                <label for="address" class="block text-sm text-neutral-400 mb-2">Adresse de livraison</label>
-                <textarea
-                    name="address"
-                    id="address"
-                    rows="3"
-                    required
-                    class="w-full bg-neutral-900 border border-neutral-700 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-orange-500"
-                    placeholder="Quartier, rue, repère..."
-                ></textarea>
+            <!-- 2. Mode de livraison -->
+            <div class="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6">
+                <h2 class="text-sm font-bold uppercase tracking-wider text-neutral-300 mb-4">Mode de livraison</h2>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                    <button 
+                        type="button" 
+                        data-action="click->checkout#setDeliveryMethod" 
+                        data-method="TIAK_TIAK"
+                        data-checkout-target="deliveryOption"
+                        class="p-4 rounded-xl border border-orange-500 bg-orange-500/10 text-left transition flex flex-col justify-between active:scale-[0.98]"
+                    >
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="font-bold text-sm text-white">Coursier Tiak-Tiak</span>
+                            <span class="text-xs bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded-full font-medium">Express Dakar</span>
+                        </div>
+                        <p class="text-xs text-neutral-400">Livraison en main propre à domicile ou bureau en 24h.</p>
+                    </button>
+
+                    <button 
+                        type="button" 
+                        data-action="click->checkout#setDeliveryMethod" 
+                        data-method="PICKUP"
+                        data-checkout-target="deliveryOption"
+                        class="p-4 rounded-xl border border-neutral-800 bg-neutral-900/40 text-left transition flex flex-col justify-between active:scale-[0.98]"
+                    >
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="font-bold text-sm text-white">Retrait en Boutique</span>
+                            <span class="text-xs bg-neutral-800 text-neutral-300 px-2 py-0.5 rounded-full font-medium">Gratuit</span>
+                        </div>
+                        <p class="text-xs text-neutral-400">TechLink Store, Dakar Plateau (prêt sous 2h).</p>
+                    </button>
+                </div>
+
+                <div class="flex flex-col gap-4" data-checkout-target="deliveryAddressBlock">
+                    <div>
+                        <label for="delivery_fee" class="block text-xs text-neutral-400 mb-1.5 font-medium">Zone de livraison à Dakar *</label>
+                        <select 
+                            name="delivery_fee" 
+                            id="delivery_fee" 
+                            required 
+                            data-checkout-target="deliveryFeeSelect"
+                            data-action="change->checkout#updateDeliveryFee"
+                            class="w-full bg-neutral-950 border border-neutral-700/80 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-500 transition text-white"
+                        >
+                            <option value="" disabled selected>Sélectionner votre commune / zone</option>
+                            <option value="1500">Dakar - Plateau, Médina, Fann, Point E (1 500 XOF)</option>
+                            <option value="2000">Dakar - Almadies, Ngor, Ouakam, Mermoz (2 000 XOF)</option>
+                            <option value="2500">Dakar - Parcelles Assainies, Grand Yoff, Guédiawaye (2 500 XOF)</option>
+                            <option value="3000">Dakar - Pikine, Rufisque, Keur Massar (3 000 XOF)</option>
+                            <option value="5000">Régions - Mbour, Thiès, Saint-Louis (5 000 XOF)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="address" class="block text-xs text-neutral-400 mb-1.5 font-medium">Adresse précise & repères *</label>
+                        <textarea
+                            name="address"
+                            id="address"
+                            rows="2"
+                            required
+                            class="w-full bg-neutral-950 border border-neutral-700/80 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-500 transition"
+                            placeholder="Ex: Almadies, en face de la pharmacie, villa 42..."
+                        ></textarea>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <label for="phone" class="block text-xs text-neutral-400 mb-1.5 font-medium">Numéro de téléphone pour la livraison *</label>
+                    <input
+                        type="tel"
+                        name="phone"
+                        id="phone"
+                        required
+                        placeholder="+221 77 000 00 00"
+                        class="w-full bg-neutral-950 border border-neutral-700/80 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-500 transition"
+                    >
+                    <p class="text-[11px] text-neutral-500 mt-1">Le coursier Tiak-Tiak vous appellera à l'approche de votre position.</p>
+                </div>
+
+                <div class="mt-4">
+                    <label for="notes" class="block text-xs text-neutral-400 mb-1.5 font-medium">Instructions pour le livreur (optionnel)</label>
+                    <input
+                        type="text"
+                        name="notes"
+                        id="notes"
+                        placeholder="Ex: Sonner à l'interphone 3B, ou laisser chez le gardien"
+                        class="w-full bg-neutral-950 border border-neutral-700/80 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-orange-500 transition"
+                    >
+                </div>
             </div>
 
-            <div>
-                <label for="phone" class="block text-sm text-neutral-400 mb-2">Téléphone</label>
-                <input
-                    type="tel"
-                    name="phone"
-                    id="phone"
-                    required
-                    class="w-full bg-neutral-900 border border-neutral-700 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-orange-500"
-                    placeholder="77 123 45 67"
+            <!-- 3. Mode de paiement (Inspiré OpenBoutik Séquestre) -->
+            <div class="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-neutral-300">Moyen de paiement sécurisé</h2>
+                    <span class="text-[11px] bg-green-500/10 text-green-400 border border-green-500/20 px-2 py-0.5 rounded-full font-semibold">
+                        Séquestre Garanti
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                    <!-- Option Wave -->
+                    <button 
+                        type="button" 
+                        data-action="click->checkout#setPaymentMethod" 
+                        data-payment="WAVE"
+                        data-checkout-target="paymentOption"
+                        class="p-4 rounded-xl border border-orange-500 bg-orange-500/10 text-left transition flex flex-col justify-between active:scale-[0.98]"
+                    >
+                        <div>
+                            <div class="font-bold text-sm text-white mb-0.5">Wave</div>
+                            <span class="text-[11px] text-blue-400 font-medium">Instantané & 0% frais</span>
+                        </div>
+                        <input type="radio" name="_payment_choice" checked class="mt-3 text-orange-500 pointer-events-none">
+                    </button>
+
+                    <!-- Option Orange Money -->
+                    <button 
+                        type="button" 
+                        data-action="click->checkout#setPaymentMethod" 
+                        data-payment="ORANGE_MONEY"
+                        data-checkout-target="paymentOption"
+                        class="p-4 rounded-xl border border-neutral-800 bg-neutral-900/40 text-left transition flex flex-col justify-between active:scale-[0.98]"
+                    >
+                        <div>
+                            <div class="font-bold text-sm text-white mb-0.5">Orange Money</div>
+                            <span class="text-[11px] text-orange-400 font-medium">Code marchand / Maxit</span>
+                        </div>
+                        <input type="radio" name="_payment_choice" class="mt-3 text-orange-500 pointer-events-none">
+                    </button>
+
+                    <!-- Option Cash -->
+                    <button 
+                        type="button" 
+                        data-action="click->checkout#setPaymentMethod" 
+                        data-payment="CASH_ON_DELIVERY"
+                        data-checkout-target="paymentOption"
+                        class="p-4 rounded-xl border border-neutral-800 bg-neutral-900/40 text-left transition flex flex-col justify-between active:scale-[0.98]"
+                    >
+                        <div>
+                            <div class="font-bold text-sm text-white mb-0.5">À la livraison</div>
+                            <span class="text-[11px] text-neutral-400 font-medium">Espèces au coursier</span>
+                        </div>
+                        <input type="radio" name="_payment_choice" class="mt-3 text-orange-500 pointer-events-none">
+                    </button>
+                </div>
+
+                <div class="bg-neutral-950/80 border border-neutral-800/80 rounded-xl p-3.5 flex items-start gap-3 text-xs text-neutral-300">
+                    <span class="text-base">🛡️</span>
+                    <p class="leading-relaxed">
+                        <strong class="text-white">Séquestre commercial garanti :</strong> En payant par Wave ou Orange Money, votre montant est consigné jusqu'à remise et vérification de votre produit par vos soins.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Récapitulatif Commande (Droite) -->
+        <div class="lg:col-span-5">
+            <div class="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-6 sticky top-24 shadow-2xl">
+                <h2 class="text-sm font-bold uppercase tracking-wider text-neutral-300 mb-4">Récapitulatif ({{ items|length }} articles)</h2>
+
+                <!-- Liste articles -->
+                <div class="flex flex-col gap-3 max-h-56 overflow-y-auto custom-scrollbar pr-1 mb-5">
+                    {% for item in items %}
+                        <div class="flex justify-between items-start text-xs py-1.5 border-b border-neutral-800/60">
+                            <div class="pr-2">
+                                <span class="font-medium text-white">{{ item.product.name }}</span>
+                                {% if item.selectedColor %}
+                                    <span class="text-neutral-400 block text-[11px]">Couleur : {{ item.selectedColor }}</span>
+                                {% endif %}
+                                <span class="text-neutral-500 text-[11px]">Quantité : {{ item.quantity }}</span>
+                            </div>
+                            <span class="font-mono text-neutral-300 whitespace-nowrap">
+                                {{ (item.product.price * item.quantity)|number_format(0, ',', ' ') }} XOF
+                            </span>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Code Promo Interactif -->
+                <div class="mb-5 pt-3 border-t border-neutral-800">
+                    <label for="coupon_code" class="block text-xs text-neutral-400 mb-1.5 font-medium">Code Promo ou Bon d'achat</label>
+                    <div class="flex gap-2">
+                        <input 
+                            type="text" 
+                            name="coupon_code" 
+                            id="coupon_code" 
+                            data-checkout-target="couponInput"
+                            placeholder="Ex: TECH10, DAKAR5000" 
+                            class="flex-1 bg-neutral-950 border border-neutral-700/80 rounded-xl px-3.5 py-2.5 text-xs uppercase focus:outline-none focus:border-orange-500 font-mono"
+                        >
+                        <button 
+                            type="button" 
+                            data-action="click->checkout#applyCoupon"
+                            class="bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition active:scale-95"
+                        >
+                            Appliquer
+                        </button>
+                    </div>
+                    <span data-checkout-target="couponMessage" class="hidden text-xs mt-1"></span>
+                </div>
+
+                <!-- Lignes de calcul -->
+                <div class="flex flex-col gap-2.5 text-xs text-neutral-400 pt-3 border-t border-neutral-800">
+                    <div class="flex justify-between">
+                        <span>Sous-total articles</span>
+                        <span class="font-mono text-white">{{ total|number_format(0, ',', ' ') }} XOF</span>
+                    </div>
+
+                    <div class="flex justify-between hidden text-green-400" data-checkout-target="couponDiscountRow">
+                        <span>Réduction Code Promo</span>
+                        <span class="font-mono font-semibold" data-checkout-target="couponDiscountDisplay">- 0 XOF</span>
+                    </div>
+
+                    <div class="flex justify-between">
+                        <span>Frais de livraison</span>
+                        <span class="font-mono text-white" data-checkout-target="deliveryDisplay">Sélectionnez une zone</span>
+                    </div>
+
+                    <div class="flex justify-between items-center text-sm font-bold pt-3 mt-2 border-t border-neutral-800 text-white">
+                        <span>Total à régler</span>
+                        <span class="text-base md:text-lg font-extrabold text-orange-500 font-mono" data-checkout-target="totalDisplay">
+                            {{ total|number_format(0, ',', ' ') }} XOF
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Bouton Commander -->
+                <button 
+                    type="submit" 
+                    data-loading-button-target="button"
+                    class="w-full mt-6 bg-orange-500 hover:bg-orange-400 text-black text-sm font-extrabold py-3.5 px-6 rounded-xl transition transform active:scale-[0.97] shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2 cursor-pointer"
                 >
+                    <span>Confirmer et Commander</span>
+                    <span class="text-base">→</span>
+                </button>
+
+                <p class="text-[11px] text-neutral-500 text-center mt-3">
+                    En validant, vous acceptez les conditions de vente TechLink. Facture officielle générée instantanément.
+                </p>
             </div>
-
-            <div class="border border-neutral-800 rounded-2xl p-4 text-sm text-neutral-400">
-                💳 Le paiement se fera par Wave ou Orange Money à la livraison ou après confirmation par notre équipe.
-            </div>
-
-            <button type="submit" class="bg-white text-black font-semibold px-6 py-3 rounded-full hover:bg-orange-500 transition">
-                Confirmer la commande
-            </button>
-        </form>
-    </section>
-
-    <script>
-        function updateTotal() {
-            const select = document.getElementById('delivery_fee');
-            const fee = parseInt(select.value) || 0;
-            const subtotal = parseInt(document.getElementById('total-display').dataset.subtotal);
-            const total = subtotal + fee;
-            
-            document.getElementById('delivery-display').innerText = new Intl.NumberFormat('fr-FR').format(fee) + ' XOF';
-            document.getElementById('total-display').innerText = new Intl.NumberFormat('fr-FR').format(total) + ' XOF';
-        }
-    </script>
+        </div>
+    </form>
+</section>
 {% endblock %}

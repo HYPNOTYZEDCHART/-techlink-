@@ -1,29 +1,34 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Service;
 
 use App\Entity\CartItem;
+use App\Entity\CustomerOrder;
+use App\Entity\OrderItem;
 use App\Entity\Product;
 use App\Entity\User;
 use App\Repository\CartItemRepository;
+use App\Repository\ProductColorRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use App\Entity\CustomerOrder;
-use App\Entity\OrderItem;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
-use Symfony\Component\HttpFoundation\RequestStack;
-use App\Repository\ProductColorRepository;
 
 class CartManager
 {
     public function __construct(
-        private EntityManagerInterface $entityManager,
-        private CartItemRepository $cartItemRepository,
-        private MailerInterface $mailer,
-        private string $senderEmail,
-        private RequestStack $requestStack,
-        private ProductColorRepository $productColorRepository,
+        private readonly EntityManagerInterface $entityManager,
+        private readonly CartItemRepository $cartItemRepository,
+        private readonly MailerInterface $mailer,
+        private readonly string $senderEmail,
+        private readonly RequestStack $requestStack,
+        private readonly ProductColorRepository $productColorRepository,
+        private readonly CouponManager $couponManager,
+        private readonly OrderLifecycleService $orderLifecycleService,
+        private readonly PaymentManager $paymentManager,
     ) {
     }
 
@@ -35,7 +40,6 @@ class CartManager
             if (!$session->isStarted()) {
                 $session->start();
             }
-            // Forcer Symfony à sauvegarder la session et envoyer le cookie PHPSESSID
             $session->set('_cart_initialized', true);
             $sessionId = $session->getId();
         }
@@ -52,7 +56,6 @@ class CartManager
         $currentQuantity = $existingItem ? $existingItem->getQuantity() : 0;
         $totalQuantity = $currentQuantity + $quantity;
 
-        // Check color stock if applicable
         if ($selectedColor) {
             $colorEntity = $this->productColorRepository->findOneBy(['product' => $product, 'name' => $selectedColor]);
             if ($colorEntity && $totalQuantity > $colorEntity->getStock()) {
@@ -99,19 +102,22 @@ class CartManager
         $this->entityManager->flush();
     }
 
+    /**
+     * @return list<CartItem>
+     */
     public function getItems(?User $user): array
     {
         if ($user) {
             return $this->cartItemRepository->findBy(['user' => $user]);
         }
-        
+
         $session = $this->requestStack->getSession();
         $sessionId = $session->getId();
-        
+
         if (!$sessionId) {
             return [];
         }
-        
+
         return $this->cartItemRepository->findBy(['sessionId' => $sessionId]);
     }
 
@@ -137,8 +143,19 @@ class CartManager
         return $total;
     }
 
-    public function checkout(?User $user, string $deliveryAddress, string $deliveryPhone, ?string $guestEmail = null, ?string $guestFirstName = null, ?string $guestLastName = null, int $deliveryFee = 0): CustomerOrder
-    {
+    public function checkout(
+        ?User $user,
+        string $deliveryAddress,
+        string $deliveryPhone,
+        ?string $guestEmail = null,
+        ?string $guestFirstName = null,
+        ?string $guestLastName = null,
+        int $deliveryFee = 0,
+        string $paymentMethod = CustomerOrder::PAYMENT_METHOD_CASH,
+        string $deliveryMethod = CustomerOrder::DELIVERY_METHOD_TIAK_TIAK,
+        ?string $couponCode = null,
+        ?string $notes = null
+    ): CustomerOrder {
         $items = $this->getItems($user);
 
         if (empty($items)) {
@@ -148,20 +165,48 @@ class CartManager
         $this->entityManager->beginTransaction();
 
         try {
+            $subtotal = 0;
+
+            // 1. Stock check & subtotal calculation
             foreach ($items as $cartItem) {
                 $product = $cartItem->getProduct();
                 $colorName = $cartItem->getSelectedColor();
-                
+
                 if ($colorName) {
                     $colorEntity = $this->productColorRepository->findOneBy(['product' => $product, 'name' => $colorName]);
                     if ($colorEntity && $cartItem->getQuantity() > $colorEntity->getStock()) {
-                        throw new \RuntimeException('Stock insuffisant pour "' . $product->getName() . '" en ' . $colorName . ' (il en reste ' . $colorEntity->getStock() . ').');
+                        throw new \RuntimeException(sprintf(
+                            'Stock insuffisant pour "%s" en %s (il en reste %d).',
+                            $product->getName(),
+                            $colorName,
+                            $colorEntity->getStock()
+                        ));
                     }
                 } elseif ($cartItem->getQuantity() > $product->getStock()) {
-                    throw new \RuntimeException('Stock insuffisant pour "' . $product->getName() . '" (il en reste ' . $product->getStock() . ').');
+                    throw new \RuntimeException(sprintf(
+                        'Stock insuffisant pour "%s" (il en reste %d).',
+                        $product->getName(),
+                        $product->getStock()
+                    ));
+                }
+
+                $subtotal += $product->getPrice() * $cartItem->getQuantity();
+            }
+
+            // 2. Coupon calculation
+            $discountAmount = 0;
+            $appliedCoupon = null;
+            if ($couponCode) {
+                $couponResult = $this->couponManager->applyCoupon($couponCode, $subtotal);
+                if ($couponResult['valid'] && $couponResult['coupon']) {
+                    $discountAmount = $couponResult['discount'];
+                    $appliedCoupon = $couponResult['coupon'];
                 }
             }
 
+            $finalTotal = max(0, $subtotal - $discountAmount) + $deliveryFee;
+
+            // 3. Create Order
             $order = new CustomerOrder();
             $order->setUser($user);
             if (!$user) {
@@ -174,15 +219,20 @@ class CartManager
                 $order->setGuestLastName($guestLastName);
             }
 
-            $order->setStatus('pending');
-            $order->setTotal($this->getTotalPrice($user) + $deliveryFee);
+            $order->setTotal($finalTotal);
             $order->setDeliveryFee($deliveryFee);
-            $order->setCreatedAt(new \DateTimeImmutable());
             $order->setDeliveryAddress($deliveryAddress);
             $order->setDeliveryPhone($deliveryPhone);
+            $order->setPaymentMethod($paymentMethod);
+            $order->setDeliveryMethod($deliveryMethod);
+            $order->setCouponCode($appliedCoupon ? $appliedCoupon->getCode() : null);
+            $order->setDiscountAmount($discountAmount);
+            $order->setNotes($notes);
+            $order->generateTrackingNumber();
 
             $this->entityManager->persist($order);
 
+            // 4. Attach order items and decrement stock
             foreach ($items as $cartItem) {
                 $product = $cartItem->getProduct();
 
@@ -195,18 +245,27 @@ class CartManager
                 $order->addOrderItem($orderItem);
                 $this->entityManager->persist($orderItem);
 
-                // Décrémentation du stock
-                $product->setStock($product->getStock() - $cartItem->getQuantity());
-                
+                // Décrémentation stricte du stock
+                $product->setStock(max(0, $product->getStock() - $cartItem->getQuantity()));
+
                 $colorName = $cartItem->getSelectedColor();
                 if ($colorName) {
                     $colorEntity = $this->productColorRepository->findOneBy(['product' => $product, 'name' => $colorName]);
                     if ($colorEntity) {
-                        $colorEntity->setStock($colorEntity->getStock() - $cartItem->getQuantity());
+                        $colorEntity->setStock(max(0, $colorEntity->getStock() - $cartItem->getQuantity()));
                     }
                 }
 
                 $this->entityManager->remove($cartItem);
+            }
+
+            // 5. Initialize tracking timeline and payment transaction
+            $this->orderLifecycleService->initializeTracking($order);
+            $this->paymentManager->initiateTransaction($order, $paymentMethod, $deliveryPhone);
+
+            // 6. Record coupon usage if applied
+            if ($appliedCoupon) {
+                $appliedCoupon->incrementUsedCount();
             }
 
             $this->entityManager->flush();
@@ -216,27 +275,27 @@ class CartManager
             throw $e;
         }
 
-    try {
-        $this->sendOrderConfirmationEmail($order);
-    } catch (\Throwable $e) {
-        // La commande est déjà validée en base ; on ne bloque pas si l'email échoue
-    }
+        try {
+            $this->sendOrderConfirmationEmail($order);
+        } catch (\Throwable $e) {
+            // Email failure does not block confirmed transaction
+        }
 
-    return $order;
-}
+        return $order;
+    }
 
     private function sendOrderConfirmationEmail(CustomerOrder $order): void
     {
         $to = $order->getUser() ? $order->getUser()->getEmail() : $order->getGuestEmail();
-        
+
         if (!$to) {
-            return; // No email to send to
+            return;
         }
 
         $email = (new TemplatedEmail())
             ->from(new Address($this->senderEmail, 'TechLink'))
             ->to((string) $to)
-            ->subject('Confirmation de ta commande n°' . $order->getId())
+            ->subject('Confirmation de ta commande n°' . $order->getTrackingNumber())
             ->htmlTemplate('emails/order_confirmation.html.twig')
             ->context([
                 'order' => $order,

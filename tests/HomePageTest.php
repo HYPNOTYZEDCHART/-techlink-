@@ -32,4 +32,21 @@ class HomePageTest extends WebTestCase
         $this->assertStringContainsString('text/xml', $client->getResponse()->headers->get('Content-Type'));
         $this->assertStringContainsString('<urlset', $client->getResponse()->getContent());
     }
+
+    public function testCartPageLoadsSuccessfully(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/panier');
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorTextContains('h1', 'Mon Panier');
+    }
+
+    public function testTrackingInvalidNumberRedirectsToHome(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/suivi/INVALID-TRACKING-12345');
+
+        $this->assertResponseRedirects('/');
+    }
 }
