@@ -1,93 +1,205 @@
 {% extends '@EasyAdmin/page/content.html.twig' %}
 
 {% block content_title %}
-  Tableau de bord
+  Tableau de bord de Gestion — TechLink
 {% endblock %}
 
 {% block main %}
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-    <div
-      style="background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 24px;"
-    >
-      <p style="color: #999; font-size: 13px; margin-bottom: 8px;">
-        Produits
+  <!-- Grille des KPIs Clés -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+    <!-- Produits totaux -->
+    <div style="background: #11141D; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px;">
+      <p style="color: #94A3B8; font-size: 12px; font-family: monospace; text-transform: uppercase; margin-bottom: 6px;">
+        Catalogue Produits
       </p>
-      <p style="color: white; font-size: 28px; font-weight: bold;">
+      <p style="color: white; font-size: 26px; font-weight: bold; font-family: monospace; margin: 0;">
         {{ productCount }}
       </p>
     </div>
-    <div
-      style="background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 24px;"
-    >
-      <p style="color: #999; font-size: 13px; margin-bottom: 8px;">
+
+    <!-- Catégories -->
+    <div style="background: #11141D; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px;">
+      <p style="color: #94A3B8; font-size: 12px; font-family: monospace; text-transform: uppercase; margin-bottom: 6px;">
         Catégories
       </p>
-      <p style="color: white; font-size: 28px; font-weight: bold;">
+      <p style="color: white; font-size: 26px; font-weight: bold; font-family: monospace; margin: 0;">
         {{ categoryCount }}
       </p>
     </div>
-    <div
-      style="background: #1a1a1a; border: 1px solid #f97316; border-radius: 12px; padding: 24px;"
-    >
-      <p style="color: #999; font-size: 13px; margin-bottom: 8px;">
-        Commandes en attente
+
+    <!-- Commandes en attente -->
+    <div style="background: #11141D; border: 1px solid rgba(249,115,22,0.4); border-radius: 12px; padding: 20px;">
+      <p style="color: #F97316; font-size: 12px; font-family: monospace; text-transform: uppercase; margin-bottom: 6px;">
+        Commandes en Attente
       </p>
-      <p style="color: #f97316; font-size: 28px; font-weight: bold;">
+      <p style="color: #F97316; font-size: 26px; font-weight: bold; font-family: monospace; margin: 0;">
         {{ pendingOrdersCount }}
       </p>
     </div>
-    <div
-      style="background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 24px;"
-    >
-      <p style="color: #999; font-size: 13px; margin-bottom: 8px;">
-        Chiffre d'affaires
+
+    <!-- Alertes Stocks -->
+    <div style="background: #11141D; border: 1px solid {{ lowStockProducts|length > 0 ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.08)' }}; border-radius: 12px; padding: 20px;">
+      <p style="color: {{ lowStockProducts|length > 0 ? '#EF4444' : '#94A3B8' }}; font-size: 12px; font-family: monospace; text-transform: uppercase; margin-bottom: 6px;">
+        Stocks Critiques (≤ Seuil)
       </p>
-      <p style="color: white; font-size: 28px; font-weight: bold;">
-        {{ (totalRevenue / 100)|number_format(0, ',', ' ') }} XOF
+      <p style="color: {{ lowStockProducts|length > 0 ? '#EF4444' : '#10B981' }}; font-size: 26px; font-weight: bold; font-family: monospace; margin: 0;">
+        {{ lowStockProducts|length }}
       </p>
     </div>
-    <script
-      src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"
-    ></script>
 
-    <div
-      style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-top: 24px;"
-    >
-      <div
-        style="background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 24px;"
-      >
-        <p style="color: #999; font-size: 13px; margin-bottom: 16px;">
-          Chiffre d'affaires — 7 derniers jours
-        </p>
-        <canvas id="revenueChart" height="80"></canvas>
-      </div>
-      <div
-        style="background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 24px;"
-      >
-        <p style="color: #999; font-size: 13px; margin-bottom: 16px;">
-          Commandes par statut
-        </p>
-        <canvas id="statusChart" height="80"></canvas>
-      </div>
+    <!-- Chiffre d'affaires brut (Fix: Montant réel en XOF, pas de division par 100) -->
+    <div style="background: #11141D; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px;">
+      <p style="color: #94A3B8; font-size: 12px; font-family: monospace; text-transform: uppercase; margin-bottom: 6px;">
+        Chiffre d'Affaires Global
+      </p>
+      <p style="color: #38BDF8; font-size: 22px; font-weight: bold; font-family: monospace; margin: 0;">
+        {{ totalRevenue|number_format(0, ',', ' ') }} XOF
+      </p>
     </div>
-
-    <script>
-      const revenueCtx = document.getElementById('revenueChart'); new
-      Chart(revenueCtx, { type: 'line', data: { labels: {{
-        revenueLast7Days|keys|json_encode|raw
-      }}, datasets: [{ label: 'XOF', data: {{
-        revenueLast7Days|json_encode|raw
-      }}, borderColor: '#f97316', backgroundColor: 'rgba(249, 115, 22, 0.1)',
-      fill: true, tension: 0.3, }] }, options: { plugins: { legend: { display:
-      false } }, scales: { x: { ticks: { color: '#999' }, grid: { color: '#333'
-      } }, y: { ticks: { color: '#999' }, grid: { color: '#333' } } } } });
-
-      const statusCtx = document.getElementById('statusChart'); new
-      Chart(statusCtx, { type: 'doughnut', data: { labels: {{
-        statusBreakdown|keys|json_encode|raw
-      }}, datasets: [{ data: {{ statusBreakdown|json_encode|raw }},
-      backgroundColor: ['#f97316', '#3b82f6', '#a855f7', '#22c55e', '#ef4444'],
-      }] }, options: { plugins: { legend: { labels: { color: '#999' } } } } });
-    </script>
   </div>
+
+  <!-- Graphiques de Vente & Statuts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+
+  <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px;">
+    <div style="background: #11141D; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px;">
+      <p style="color: #94A3B8; font-size: 13px; font-weight: bold; margin-bottom: 16px;">
+        Chiffre d'affaires — 7 derniers jours (XOF)
+      </p>
+      <canvas id="revenueChart" height="90"></canvas>
+    </div>
+    <div style="background: #11141D; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px;">
+      <p style="color: #94A3B8; font-size: 13px; font-weight: bold; margin-bottom: 16px;">
+        Répartition des commandes
+      </p>
+      <canvas id="statusChart" height="90"></canvas>
+    </div>
+  </div>
+
+  <!-- Tableau des Stocks Critiques & Réapprovisionnement -->
+  <div style="background: #11141D; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+      <div>
+        <h3 style="color: white; font-size: 15px; font-weight: bold; margin: 0;">
+          Alerte Stocks Critiques & Réapprovisionnement
+        </h3>
+        <p style="color: #64748B; font-size: 12px; margin: 2px 0 0 0;">
+          Articles dont le stock est inférieur ou égal au seuil configuré.
+        </p>
+      </div>
+      <a href="{{ ea_url().setController('App\\Controller\\Admin\\ProductCrudController').setAction('index') }}" style="color: #F97316; font-size: 12px; text-decoration: none; font-weight: bold;">
+        Gérer tout le stock →
+      </a>
+    </div>
+
+    {% if lowStockProducts is empty %}
+      <div style="padding: 24px; text-align: center; color: #10B981; font-size: 13px; background: rgba(16,185,129,0.05); border: 1px solid rgba(16,185,129,0.2); border-radius: 8px;">
+        ✔ Tous les stocks sont au-dessus de leurs seuils d'alerte respectifs.
+      </div>
+    {% else %}
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+          <thead>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: #94A3B8; text-align: left;">
+              <th style="padding: 10px 8px; font-family: monospace;">SKU</th>
+              <th style="padding: 10px 8px;">Désignation</th>
+              <th style="padding: 10px 8px;">Marque</th>
+              <th style="padding: 10px 8px;">État</th>
+              <th style="padding: 10px 8px; text-align: center;">Stock</th>
+              <th style="padding: 10px 8px; text-align: center;">Seuil</th>
+              <th style="padding: 10px 8px; text-align: right;">Prix XOF</th>
+              <th style="padding: 10px 8px; text-align: right;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in lowStockProducts %}
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); color: #E2E8F0;">
+                <td style="padding: 10px 8px; font-family: Courier, monospace; color: #94A3B8;">
+                  {{ p.sku|default('SKU-TL-' ~ p.id) }}
+                </td>
+                <td style="padding: 10px 8px; font-weight: bold;">
+                  {{ p.name }}
+                </td>
+                <td style="padding: 10px 8px; color: #CBD5E1;">
+                  {{ p.brand }}
+                </td>
+                <td style="padding: 10px 8px;">
+                  <span style="font-size: 10px; font-family: monospace; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.08);">
+                    {{ p.condition.label }}
+                  </span>
+                </td>
+                <td style="padding: 10px 8px; text-align: center;">
+                  {% if p.stock <= 0 %}
+                    <span style="background: rgba(239,68,68,0.2); color: #EF4444; border: 1px solid rgba(239,68,68,0.4); padding: 2px 8px; border-radius: 6px; font-weight: bold; font-family: monospace;">
+                      Rupture (0)
+                    </span>
+                  {% else %}
+                    <span style="background: rgba(249,115,22,0.2); color: #F97316; border: 1px solid rgba(249,115,22,0.4); padding: 2px 8px; border-radius: 6px; font-weight: bold; font-family: monospace;">
+                      Critique ({{ p.stock }})
+                    </span>
+                  {% endif %}
+                </td>
+                <td style="padding: 10px 8px; text-align: center; font-family: monospace; color: #94A3B8;">
+                  {{ p.lowStockThreshold }}
+                </td>
+                <td style="padding: 10px 8px; text-align: right; font-family: monospace; font-weight: bold; color: #F97316;">
+                  {{ p.price|number_format(0, ',', ' ') }}
+                </td>
+                <td style="padding: 10px 8px; text-align: right;">
+                  <a
+                    href="{{ ea_url().setController('App\\Controller\\Admin\\ProductCrudController').setAction('edit').setEntityId(p.id) }}"
+                    style="display: inline-block; padding: 4px 10px; background: rgba(255,255,255,0.08); hover:background: rgba(255,255,255,0.15); color: white; border-radius: 6px; text-decoration: none; font-size: 11px;"
+                  >
+                    Réapprovisionner
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  </div>
+
+  <script>
+    const revenueCtx = document.getElementById('revenueChart');
+    new Chart(revenueCtx, {
+      type: 'line',
+      data: {
+        labels: {{ revenueLast7Days|keys|json_encode|raw }},
+        datasets: [{
+          label: 'XOF',
+          data: {{ revenueLast7Days|json_encode|raw }},
+          borderColor: '#F97316',
+          backgroundColor: 'rgba(249, 115, 22, 0.1)',
+          fill: true,
+          tension: 0.3,
+        }]
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#64748B' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+          y: { ticks: { color: '#64748B' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+        }
+      }
+    });
+
+    const statusCtx = document.getElementById('statusChart');
+    new Chart(statusCtx, {
+      type: 'doughnut',
+      data: {
+        labels: {{ statusBreakdown|keys|json_encode|raw }},
+        datasets: [{
+          data: {{ statusBreakdown|json_encode|raw }},
+          backgroundColor: ['#F97316', '#38BDF8', '#A855F7', '#10B981', '#EF4444'],
+        }]
+      },
+      options: {
+        plugins: {
+          legend: { labels: { color: '#94A3B8' } }
+        }
+      }
+    });
+  </script>
 {% endblock %}

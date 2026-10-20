@@ -23,34 +23,38 @@ class DashboardController extends AbstractDashboardController
     ) {
     }
     public function index(): Response
-{
-    $productCount = $this->productRepository->count([]);
-    $categoryCount = $this->categoryRepository->count([]);
-    $pendingOrdersCount = $this->orderRepository->count(['status' => 'pending']);
-    $totalRevenue = $this->orderRepository->getTotalRevenue();
-    $revenueLast7Days = $this->orderRepository->getRevenueLast7Days();
-    $statusLabels = [
-    'pending' => 'En attente',
-    'confirmed' => 'Confirmée',
-    'shipped' => 'Expédiée',
-    'delivered' => 'Livrée',
-    'cancelled' => 'Annulée',
-];
+    {
+        $productCount = $this->productRepository->count([]);
+        $categoryCount = $this->categoryRepository->count([]);
+        $pendingOrdersCount = $this->orderRepository->count(['status' => 'pending']);
+        $totalRevenue = $this->orderRepository->getTotalRevenue();
+        $revenueLast7Days = $this->orderRepository->getRevenueLast7Days();
+        $lowStockProducts = $this->productRepository->findLowStockProducts(5);
 
-$rawStatusBreakdown = $this->orderRepository->getStatusBreakdown();
-$statusBreakdown = [];
-foreach ($rawStatusBreakdown as $status => $count) {
-    $statusBreakdown[$statusLabels[$status] ?? $status] = $count;
-}
-    return $this->render('admin/dashboard.html.twig', [
-        'productCount' => $productCount,
-        'categoryCount' => $categoryCount,
-        'pendingOrdersCount' => $pendingOrdersCount,
-        'totalRevenue' => $totalRevenue,
-        'revenueLast7Days' => $revenueLast7Days,
-        'statusBreakdown' => $statusBreakdown,
-    ]);
-}
+        $statusLabels = [
+            'pending' => 'En attente',
+            'confirmed' => 'Confirmée',
+            'shipped' => 'Expédiée',
+            'delivered' => 'Livrée',
+            'cancelled' => 'Annulée',
+        ];
+
+        $rawStatusBreakdown = $this->orderRepository->getStatusBreakdown();
+        $statusBreakdown = [];
+        foreach ($rawStatusBreakdown as $status => $count) {
+            $statusBreakdown[$statusLabels[$status] ?? $status] = $count;
+        }
+
+        return $this->render('admin/dashboard.html.twig', [
+            'productCount' => $productCount,
+            'categoryCount' => $categoryCount,
+            'pendingOrdersCount' => $pendingOrdersCount,
+            'totalRevenue' => $totalRevenue,
+            'revenueLast7Days' => $revenueLast7Days,
+            'statusBreakdown' => $statusBreakdown,
+            'lowStockProducts' => $lowStockProducts,
+        ]);
+    }
     public function configureDashboard(): Dashboard
 {
     return Dashboard::new()
