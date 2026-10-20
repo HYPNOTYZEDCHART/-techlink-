@@ -1,18 +1,18 @@
 databases:
-  # 1. Base de données PostgreSQL managée (Frankfurt - Europe)
+  # 1. Base de données PostgreSQL managée (Oregon - US West)
   - name: techlink-db
     plan: free
-    region: frankfurt
+    region: oregon
     postgresMajorVersion: 16
 
 services:
 
-  # 2. Application Web Docker (Frankfurt - Europe)
+  # 2. Application Web Docker (Oregon - US West)
   - type: web
     name: techlink-web
     env: docker
     plan: free
-    region: frankfurt
+    region: oregon
     dockerfilePath: ./Dockerfile
     envVars:
       - key: DATABASE_URL
