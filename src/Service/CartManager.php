@@ -29,6 +29,7 @@ class CartManager
         private readonly CouponManager $couponManager,
         private readonly OrderLifecycleService $orderLifecycleService,
         private readonly PaymentManager $paymentManager,
+        private readonly OrderCheckoutService $orderCheckoutService,
     ) {
     }
 
@@ -158,130 +159,20 @@ class CartManager
     ): CustomerOrder {
         $items = $this->getItems($user);
 
-        if (empty($items)) {
-            throw new \LogicException('Le panier est vide.');
-        }
-
-        $this->entityManager->beginTransaction();
-
-        try {
-            $subtotal = 0;
-
-            // 1. Stock check & subtotal calculation
-            foreach ($items as $cartItem) {
-                $product = $cartItem->getProduct();
-                $colorName = $cartItem->getSelectedColor();
-
-                if ($colorName) {
-                    $colorEntity = $this->productColorRepository->findOneBy(['product' => $product, 'name' => $colorName]);
-                    if ($colorEntity && $cartItem->getQuantity() > $colorEntity->getStock()) {
-                        throw new \RuntimeException(sprintf(
-                            'Stock insuffisant pour "%s" en %s (il en reste %d).',
-                            $product->getName(),
-                            $colorName,
-                            $colorEntity->getStock()
-                        ));
-                    }
-                } elseif ($cartItem->getQuantity() > $product->getStock()) {
-                    throw new \RuntimeException(sprintf(
-                        'Stock insuffisant pour "%s" (il en reste %d).',
-                        $product->getName(),
-                        $product->getStock()
-                    ));
-                }
-
-                $subtotal += $product->getPrice() * $cartItem->getQuantity();
-            }
-
-            // 2. Coupon calculation
-            $discountAmount = 0;
-            $appliedCoupon = null;
-            if ($couponCode) {
-                $couponResult = $this->couponManager->applyCoupon($couponCode, $subtotal);
-                if ($couponResult['valid'] && $couponResult['coupon']) {
-                    $discountAmount = $couponResult['discount'];
-                    $appliedCoupon = $couponResult['coupon'];
-                }
-            }
-
-            $finalTotal = max(0, $subtotal - $discountAmount) + $deliveryFee;
-
-            // 3. Create Order
-            $order = new CustomerOrder();
-            $order->setUser($user);
-            if (!$user) {
-                $session = $this->requestStack->getSession();
-                if ($session->isStarted()) {
-                    $order->setSessionId($session->getId());
-                }
-                $order->setGuestEmail($guestEmail);
-                $order->setGuestFirstName($guestFirstName);
-                $order->setGuestLastName($guestLastName);
-            }
-
-            $order->setTotal($finalTotal);
-            $order->setDeliveryFee($deliveryFee);
-            $order->setDeliveryAddress($deliveryAddress);
-            $order->setDeliveryPhone($deliveryPhone);
-            $order->setPaymentMethod($paymentMethod);
-            $order->setDeliveryMethod($deliveryMethod);
-            $order->setCouponCode($appliedCoupon ? $appliedCoupon->getCode() : null);
-            $order->setDiscountAmount($discountAmount);
-            $order->setNotes($notes);
-            $order->generateTrackingNumber();
-
-            $this->entityManager->persist($order);
-
-            // 4. Attach order items and decrement stock
-            foreach ($items as $cartItem) {
-                $product = $cartItem->getProduct();
-
-                $orderItem = new OrderItem();
-                $orderItem->setProduct($product);
-                $orderItem->setQuantity($cartItem->getQuantity());
-                $orderItem->setUnitPrice($product->getPrice());
-                $orderItem->setSelectedColor($cartItem->getSelectedColor());
-
-                $order->addOrderItem($orderItem);
-                $this->entityManager->persist($orderItem);
-
-                // Décrémentation stricte du stock
-                $product->setStock(max(0, $product->getStock() - $cartItem->getQuantity()));
-
-                $colorName = $cartItem->getSelectedColor();
-                if ($colorName) {
-                    $colorEntity = $this->productColorRepository->findOneBy(['product' => $product, 'name' => $colorName]);
-                    if ($colorEntity) {
-                        $colorEntity->setStock(max(0, $colorEntity->getStock() - $cartItem->getQuantity()));
-                    }
-                }
-
-                $this->entityManager->remove($cartItem);
-            }
-
-            // 5. Initialize tracking timeline and payment transaction
-            $this->orderLifecycleService->initializeTracking($order);
-            $this->paymentManager->initiateTransaction($order, $paymentMethod, $deliveryPhone);
-
-            // 6. Record coupon usage if applied
-            if ($appliedCoupon) {
-                $appliedCoupon->incrementUsedCount();
-            }
-
-            $this->entityManager->flush();
-            $this->entityManager->commit();
-        } catch (\Throwable $e) {
-            $this->entityManager->rollback();
-            throw $e;
-        }
-
-        try {
-            $this->sendOrderConfirmationEmail($order);
-        } catch (\Throwable $e) {
-            // Email failure does not block confirmed transaction
-        }
-
-        return $order;
+        return $this->orderCheckoutService->checkout(
+            user: $user,
+            items: $items,
+            deliveryAddress: $deliveryAddress,
+            deliveryPhone: $deliveryPhone,
+            deliveryFee: $deliveryFee,
+            paymentMethod: $paymentMethod,
+            deliveryMethod: $deliveryMethod,
+            couponCode: $couponCode,
+            notes: $notes,
+            guestEmail: $guestEmail,
+            guestFirstName: $guestFirstName,
+            guestLastName: $guestLastName,
+        );
     }
 
     private function sendOrderConfirmationEmail(CustomerOrder $order): void

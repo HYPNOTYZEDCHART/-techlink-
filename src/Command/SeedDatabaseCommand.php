@@ -9,6 +9,7 @@ use App\Entity\Coupon;
 use App\Entity\Product;
 use App\Entity\ProductColor;
 use App\Entity\User;
+use App\Enum\ProductCondition;
 use App\Repository\CategoryRepository;
 use App\Repository\CouponRepository;
 use App\Repository\ProductRepository;
@@ -199,6 +200,9 @@ class SeedDatabaseCommand extends Command
                     'RAM' => '16 Go DDR4',
                     'Stockage' => '512 Go SSD NVMe',
                 ],
+                'condition' => ProductCondition::REFURBISHED,
+                'warrantyMonths' => 12,
+                'lowStockThreshold' => 4,
                 'colors' => [
                     ['name' => 'Argent', 'hex' => '#c0c0c0', 'stock' => 10],
                 ],
@@ -211,6 +215,9 @@ class SeedDatabaseCommand extends Command
                 'brand' => 'Google',
                 'category' => 'telephones',
                 'description' => 'L\'expérience Android pure avec Google Tensor G3, thermomètre intégré et les meilleures photos de nuit au monde.',
+                'condition' => ProductCondition::OPEN_BOX,
+                'warrantyMonths' => 12,
+                'lowStockThreshold' => 5,
                 'specifications' => [
                     'Écran' => '6.7" Super Actua OLED 1-120Hz',
                     'Puce' => 'Google Tensor G3 avec puce Titan M2',
@@ -227,6 +234,9 @@ class SeedDatabaseCommand extends Command
         foreach ($productsData as $data) {
             $prod = $this->productRepository->findOneBy(['slug' => $data['slug']]);
             $imageFilename = $data['slug'] . '.jpg';
+            $condition = $data['condition'] ?? ProductCondition::NEW_SEALED;
+            $warranty = $data['warrantyMonths'] ?? 12;
+            $lowStock = $data['lowStockThreshold'] ?? 5;
 
             if (!$prod) {
                 $prod = new Product();
@@ -240,6 +250,9 @@ class SeedDatabaseCommand extends Command
                 $prod->setCategory($categories[$data['category']]);
                 $prod->setIsActive(true);
                 $prod->setImageFilename($imageFilename);
+                $prod->setCondition($condition);
+                $prod->setWarrantyMonths($warranty);
+                $prod->setLowStockThreshold($lowStock);
                 $prod->setSku(strtoupper(substr($data['brand'], 0, 3)) . '-' . rand(1000, 9999));
 
                 $this->entityManager->persist($prod);
@@ -255,11 +268,14 @@ class SeedDatabaseCommand extends Command
 
                 $io->writeln(sprintf('  + Produit créé : %s (%s XOF)', $data['name'], number_format($data['price'], 0, ',', ' ')));
             } else {
-                // Mettre à jour l'image si non définie
+                // Synchroniser les nouveaux attributs Phase 1 sur les produits existants
+                $prod->setCondition($condition);
+                $prod->setWarrantyMonths($warranty);
+                $prod->setLowStockThreshold($lowStock);
                 if (!$prod->getImageFilename()) {
                     $prod->setImageFilename($imageFilename);
-                    $io->writeln(sprintf('  * Image attachée au produit existant : %s -> %s', $data['name'], $imageFilename));
                 }
+                $io->writeln(sprintf('  * Attributs synchronisés : %s (%s, Garantie %d mois)', $data['name'], $condition->label(), $warranty));
             }
         }
         $this->entityManager->flush();

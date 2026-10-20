@@ -3,9 +3,11 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Product;
+use App\Enum\ProductCondition;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IntegerField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
@@ -81,6 +83,19 @@ return $this->redirect($url);
                 }),
             TextField::new('brand', 'Marque'),
             TextField::new('sku', 'SKU'),
+            ChoiceField::new('condition', 'État matériel')
+                ->setChoices([
+                    'Neuf Scellé' => ProductCondition::NEW_SEALED,
+                    'Reconditionné Certifié' => ProductCondition::REFURBISHED,
+                    'Boîte Ouverte (Open Box)' => ProductCondition::OPEN_BOX,
+                ])
+                ->renderAsBadges([
+                    ProductCondition::NEW_SEALED->value => 'success',
+                    ProductCondition::REFURBISHED->value => 'info',
+                    ProductCondition::OPEN_BOX->value => 'warning',
+                ]),
+            IntegerField::new('warrantyMonths', 'Garantie (mois)')->hideOnIndex(),
+            IntegerField::new('lowStockThreshold', 'Seuil alerte stock')->hideOnIndex(),
             TextField::new('imageFile', 'Image')
                 ->setFormType(VichImageType::class)
                 ->setFormTypeOptions([

@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Enum\ProductCondition;
 use App\Repository\ProductRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -11,6 +12,11 @@ use Symfony\Component\HttpFoundation\File\File;
 use Vich\UploaderBundle\Mapping\Annotation as Vich;
 
 #[ORM\Entity(repositoryClass: ProductRepository::class)]
+#[ORM\Table(name: 'product')]
+#[ORM\Index(name: 'idx_product_brand', columns: ['brand'])]
+#[ORM\Index(name: 'idx_product_condition', columns: ['item_condition'])]
+#[ORM\Index(name: 'idx_product_sku', columns: ['sku'])]
+#[ORM\Index(name: 'idx_product_price', columns: ['price'])]
 #[Vich\Uploadable]
 class Product
 {
@@ -73,6 +79,15 @@ class Product
      */
     #[ORM\Column(type: Types::JSON, nullable: true)]
     private array $specifications = [];
+
+    #[ORM\Column(name: 'item_condition', type: Types::STRING, length: 30, enumType: ProductCondition::class, options: ['default' => 'NEW_SEALED'])]
+    private ProductCondition $condition = ProductCondition::NEW_SEALED;
+
+    #[ORM\Column(type: Types::INTEGER, options: ['default' => 12])]
+    private int $warrantyMonths = 12;
+
+    #[ORM\Column(type: Types::INTEGER, options: ['default' => 5])]
+    private int $lowStockThreshold = 5;
 
     /**
      * @var Collection<int, ProductImage>
@@ -439,5 +454,46 @@ class Product
         }
 
         return $this;
+    }
+
+    public function getCondition(): ProductCondition
+    {
+        return $this->condition;
+    }
+
+    public function setCondition(ProductCondition $condition): static
+    {
+        $this->condition = $condition;
+
+        return $this;
+    }
+
+    public function getWarrantyMonths(): int
+    {
+        return $this->warrantyMonths;
+    }
+
+    public function setWarrantyMonths(int $warrantyMonths): static
+    {
+        $this->warrantyMonths = $warrantyMonths;
+
+        return $this;
+    }
+
+    public function getLowStockThreshold(): int
+    {
+        return $this->lowStockThreshold;
+    }
+
+    public function setLowStockThreshold(int $lowStockThreshold): static
+    {
+        $this->lowStockThreshold = $lowStockThreshold;
+
+        return $this;
+    }
+
+    public function isLowStock(): bool
+    {
+        return ($this->stock ?? 0) <= $this->lowStockThreshold;
     }
 }

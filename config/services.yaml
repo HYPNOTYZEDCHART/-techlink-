@@ -6,11 +6,17 @@ services:
     _defaults:
         autowire: true
         autoconfigure: true
+        bind:
+            $senderEmail: '%env(MAILER_FROM)%'
 
     App\:
         resource: "../src/"
 
     App\Service\CartManager:
+        arguments:
+            $senderEmail: '%env(MAILER_FROM)%'
+
+    App\Service\OrderCheckoutService:
         arguments:
             $senderEmail: '%env(MAILER_FROM)%'
 

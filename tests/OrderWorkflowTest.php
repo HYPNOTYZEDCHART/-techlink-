@@ -84,4 +84,60 @@ class OrderWorkflowTest extends TestCase
         $this->assertCount(1, $order->getOrderTrackings());
         $this->assertSame(OrderTracking::STEP_SHIPPED_TIAK_TIAK, $order->getOrderTrackings()->first()->getStatusStep());
     }
+
+    public function testProductConditionAndThreshold(): void
+    {
+        $product = new \App\Entity\Product();
+        $product->setName('MacBook Pro M3');
+        $product->setStock(3);
+        $product->setLowStockThreshold(5);
+        $product->setWarrantyMonths(24);
+        $product->setCondition(\App\Enum\ProductCondition::NEW_SEALED);
+
+        $this->assertSame(\App\Enum\ProductCondition::NEW_SEALED, $product->getCondition());
+        $this->assertSame('Neuf Scellé', $product->getCondition()->label());
+        $this->assertSame(24, $product->getWarrantyMonths());
+        $this->assertSame(5, $product->getLowStockThreshold());
+        $this->assertTrue($product->isLowStock());
+
+        $product->setStock(10);
+        $this->assertFalse($product->isLowStock());
+    }
+
+    public function testProductFilterDtoFromRequest(): void
+    {
+        $request = new \Symfony\Component\HttpFoundation\Request([
+            'q' => 'iPhone',
+            'categorie' => 'telephones',
+            'marque' => 'Apple',
+            'prix_min' => '500000',
+            'prix_max' => '900000',
+            'etat' => 'NEW_SEALED',
+            'en_stock' => '1',
+            'tri' => 'price_desc',
+            'page' => '2',
+        ]);
+
+        $dto = \App\DTO\ProductFilterDto::fromRequest($request);
+
+        $this->assertSame('iPhone', $dto->search);
+        $this->assertSame(['telephones'], $dto->categorySlugs);
+        $this->assertSame(['Apple'], $dto->brands);
+        $this->assertSame(500000, $dto->priceMin);
+        $this->assertSame(900000, $dto->priceMax);
+        $this->assertSame(\App\Enum\ProductCondition::NEW_SEALED, $dto->condition);
+        $this->assertTrue($dto->inStockOnly);
+        $this->assertSame('price_desc', $dto->sortBy);
+        $this->assertSame(2, $dto->page);
+    }
+
+    public function testInsufficientStockExceptionFormatting(): void
+    {
+        $exception = new \App\Exception\InsufficientStockException('Dell XPS 15', 5, 2, 'Platinum Silver');
+
+        $this->assertStringContainsString('Dell XPS 15', $exception->getMessage());
+        $this->assertStringContainsString('Platinum Silver', $exception->getMessage());
+        $this->assertStringContainsString('Quantité demandée : 5', $exception->getMessage());
+        $this->assertStringContainsString('Stock restant : 2', $exception->getMessage());
+    }
 }

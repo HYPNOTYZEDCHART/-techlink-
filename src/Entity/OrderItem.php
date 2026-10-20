@@ -29,6 +29,9 @@ class OrderItem
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $selectedColor = null;
 
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $serialNumber = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -90,6 +93,18 @@ class OrderItem
     public function setSelectedColor(?string $selectedColor): static
     {
         $this->selectedColor = $selectedColor;
+
+        return $this;
+    }
+
+    public function getSerialNumber(): ?string
+    {
+        return $this->serialNumber;
+    }
+
+    public function setSerialNumber(?string $serialNumber): static
+    {
+        $this->serialNumber = $serialNumber;
 
         return $this;
     }

@@ -2,7 +2,9 @@
 
 namespace App\Controller;
 
+use App\DTO\ProductFilterDto;
 use App\Entity\Product;
+use App\Enum\ProductCondition;
 use App\Repository\CategoryRepository;
 use App\Repository\ProductRepository;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
@@ -20,45 +22,34 @@ final class ProductController extends AbstractController
     #[Route('/produits', name: 'app_product_index')]
     public function index(Request $request, ProductRepository $productRepository, CategoryRepository $categoryRepository, WishlistManager $wishlistManager): Response
     {
-        $params = $request->query->all();
-        
-        $catParam = $params['categorie'] ?? [];
-        $categorySlugs = is_array($catParam) ? $catParam : [$catParam];
-        
-        $brandParam = $params['marque'] ?? [];
-        $brands = is_array($brandParam) ? $brandParam : [$brandParam];
+        $filter = ProductFilterDto::fromRequest($request);
 
-        $search = $request->query->get('recherche');
-        
-        $selectedCategories = [];
-
-        $criteria = ['isActive' => true];
-
-        if (!empty($categorySlugs)) {
-            $selectedCategories = $categoryRepository->findBy(['slug' => $categorySlugs]);
-            if (!empty($selectedCategories)) {
-                $criteria['category'] = $selectedCategories;
+        // Support rétrocompatible du paramètre ?recherche= si utilisé à la place de ?q=
+        if ($filter->search === null && $request->query->has('recherche')) {
+            $legacySearch = trim((string) $request->query->get('recherche'));
+            if ($legacySearch !== '') {
+                $filter = new ProductFilterDto(
+                    search: $legacySearch,
+                    categorySlugs: $filter->categorySlugs,
+                    brands: $filter->brands,
+                    priceMin: $filter->priceMin,
+                    priceMax: $filter->priceMax,
+                    condition: $filter->condition,
+                    inStockOnly: $filter->inStockOnly,
+                    sortBy: $filter->sortBy,
+                    page: $filter->page,
+                    limit: $filter->limit,
+                );
             }
         }
 
-        if (!empty($brands)) {
-            $criteria['brand'] = $brands;
-        }
-         
+        $selectedCategories = !empty($filter->categorySlugs)
+            ? $categoryRepository->findBy(['slug' => $filter->categorySlugs])
+            : [];
 
-        $priceMin = $request->query->get('prix_min') ? (int) $request->query->get('prix_min') : null;
-        $priceMax = $request->query->get('prix_max') ? (int) $request->query->get('prix_max') : null;
-
-$page = max(1, (int) $request->query->get('page', 1));
-
-if ($search) {
-    $paginator = $productRepository->searchPaginated($search, $criteria, $page, 12, $priceMin, $priceMax);
-} else {
-    $paginator = $productRepository->findPaginated($criteria, $page, 12, $priceMin, $priceMax);
-}
-
-        $products = $paginator;
-        $totalPages = (int) ceil(count($paginator) / 12);
+        $paginator = $productRepository->findFilteredPaginated($filter);
+        $totalItems = count($paginator);
+        $totalPages = (int) ceil($totalItems / $filter->limit);
 
         $wishlistProductIds = [];
         if ($this->getUser()) {
@@ -68,14 +59,21 @@ if ($search) {
         }
 
         return $this->render('product/list.html.twig', [
-            'products' => $products,
+            'products' => $paginator,
             'selectedCategories' => $selectedCategories,
-            'selectedBrands' => $brands,
+            'selectedBrands' => $filter->brands,
             'allBrands' => $productRepository->findDistinctBrands(),
-            'currentPage' => $page,
+            'allCategories' => $categoryRepository->findBy([], ['name' => 'ASC']),
+            'currentPage' => $filter->page,
             'totalPages' => $totalPages,
-            'priceMin' => $priceMin,
-            'priceMax' => $priceMax,
+            'totalItems' => $totalItems,
+            'priceMin' => $filter->priceMin,
+            'priceMax' => $filter->priceMax,
+            'currentCondition' => $filter->condition?->value,
+            'conditions' => ProductCondition::cases(),
+            'inStockOnly' => $filter->inStockOnly,
+            'currentSort' => $filter->sortBy,
+            'searchQuery' => $filter->search,
             'wishlistProductIds' => $wishlistProductIds,
         ]);
     }
