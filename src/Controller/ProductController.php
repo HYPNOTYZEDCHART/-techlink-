@@ -79,30 +79,47 @@ final class ProductController extends AbstractController
     }
 
     #[Route('/produit/{slug}', name: 'app_product_show')]
-public function show(#[MapEntity(mapping: ['slug' => 'slug'])] Product $product, Request $request, \App\Service\WishlistManager $wishlistManager, ReviewManager $reviewManager): Response
-{
-    $isInWishlist = $this->getUser() ? $wishlistManager->isInWishlist($this->getUser(), $product) : false;
-    $canReview = $this->getUser() ? !$reviewManager->hasAlreadyReviewed($this->getUser(), $product) : false;
-    $averageRating = $reviewManager->getAverageRating($product);
+    public function show(
+        #[MapEntity(mapping: ['slug' => 'slug'])] Product $product,
+        Request $request,
+        \App\Service\WishlistManager $wishlistManager,
+        ReviewManager $reviewManager,
+        ProductRepository $productRepository
+    ): Response {
+        $isInWishlist = $this->getUser() ? $wishlistManager->isInWishlist($this->getUser(), $product) : false;
+        $canReview = $this->getUser() ? !$reviewManager->hasAlreadyReviewed($this->getUser(), $product) : false;
+        $averageRating = $reviewManager->getAverageRating($product);
 
-    $reviewsPage = max(1, (int) $request->query->get('avis_page', 1));
-    $reviewsPerPage = 5;
-    $allReviews = $product->getReviews();
-    $totalReviews = count($allReviews);
-    $totalReviewPages = (int) ceil($totalReviews / $reviewsPerPage);
+        $reviewsPage = max(1, (int) $request->query->get('avis_page', 1));
+        $reviewsPerPage = 5;
+        $allReviews = $product->getReviews();
+        $totalReviews = count($allReviews);
+        $totalReviewPages = (int) ceil($totalReviews / $reviewsPerPage);
 
-    $reviews = array_slice($allReviews->toArray(), ($reviewsPage - 1) * $reviewsPerPage, $reviewsPerPage);
+        $reviews = array_slice($allReviews->toArray(), ($reviewsPage - 1) * $reviewsPerPage, $reviewsPerPage);
 
-    return $this->render('product/show.html.twig', [
-        'product' => $product,
-        'isInWishlist' => $isInWishlist,
-        'canReview' => $canReview,
-        'averageRating' => $averageRating,
-        'reviews' => $reviews,
-        'reviewsPage' => $reviewsPage,
-        'totalReviewPages' => $totalReviewPages,
-    ]);
-}
+        $relatedProducts = [];
+        if ($product->getCategory()) {
+            $related = $productRepository->findBy(
+                ['category' => $product->getCategory(), 'isActive' => true],
+                ['createdAt' => 'DESC'],
+                5
+            );
+            $relatedProducts = array_values(array_filter($related, fn (Product $p) => $p->getId() !== $product->getId()));
+            $relatedProducts = array_slice($relatedProducts, 0, 4);
+        }
+
+        return $this->render('product/show.html.twig', [
+            'product' => $product,
+            'isInWishlist' => $isInWishlist,
+            'canReview' => $canReview,
+            'averageRating' => $averageRating,
+            'reviews' => $reviews,
+            'reviewsPage' => $reviewsPage,
+            'totalReviewPages' => $totalReviewPages,
+            'relatedProducts' => $relatedProducts,
+        ]);
+    }
     #[Route('/api/recherche-produits', name: 'app_api_product_search')]
     #[Route('/produits/recherche/live', name: 'app_product_search_live')]
     public function searchApi(Request $request, ProductRepository $productRepository): JsonResponse

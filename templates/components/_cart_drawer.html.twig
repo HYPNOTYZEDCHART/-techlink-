@@ -1,0 +1,105 @@
+{# templates/components/_cart_drawer.html.twig #}
+<div
+    id="cart-drawer-root"
+    data-controller="cart-drawer"
+    data-cart-drawer-state-url-value="{{ path('app_cart_state') }}"
+    data-cart-drawer-update-url-value="/panier/modifier"
+    data-cart-drawer-remove-url-value="/panier/supprimer"
+    data-cart-drawer-checkout-url-value="{{ path('app_cart_checkout') }}"
+    data-cart-drawer-cart-url-value="{{ path('app_cart') }}"
+    class="relative z-50"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Panier d'achats"
+>
+    <!-- Overlay sombre -->
+    <div
+        data-cart-drawer-target="backdrop"
+        data-action="click->cart-drawer#close"
+        class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-300 opacity-0 pointer-events-none"
+    ></div>
+
+    <!-- Tiroir latéral Slide-Over -->
+    <div
+        data-cart-drawer-target="panel"
+        class="fixed top-0 right-0 bottom-0 w-full max-w-md bg-[#0D0F17] border-l border-white/10 shadow-[0_0_60px_rgba(0,0,0,0.95)] transform translate-x-full transition-transform duration-300 ease-out flex flex-col z-50"
+    >
+        <!-- En-tête du tiroir -->
+        <div class="p-4 sm:p-5 border-b border-white/10 flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-sm font-bold text-white tracking-tight uppercase">Mon Panier</h2>
+                    <p class="text-[11px] text-neutral-400 font-mono">
+                        <span data-cart-drawer-target="itemCountText">0</span> article(s)
+                    </p>
+                </div>
+            </div>
+            <button
+                type="button"
+                data-action="click->cart-drawer#close"
+                class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white flex items-center justify-center text-lg transition"
+                title="Fermer le panier"
+            >
+                ×
+            </button>
+        </div>
+
+        <!-- Barre de progression livraison offerte -->
+        <div class="px-5 py-3 bg-[#12151E] border-b border-white/5 shrink-0" data-cart-drawer-target="shippingBarContainer">
+            <div class="flex items-center justify-between text-[11px] font-mono mb-1.5">
+                <span class="text-neutral-300">Livraison Dakar offerte (500 000 XOF)</span>
+                <span data-cart-drawer-target="shippingPercentText" class="text-cyan-400 font-bold">0%</span>
+            </div>
+            <div class="w-full bg-neutral-900 rounded-full h-1.5 overflow-hidden">
+                <div
+                    data-cart-drawer-target="shippingProgressBar"
+                    class="h-full bg-gradient-to-r from-orange-500 to-cyan-400 transition-all duration-500 rounded-full"
+                    style="width: 0%;"
+                ></div>
+            </div>
+            <p data-cart-drawer-target="shippingMessageText" class="text-[10px] text-neutral-400 mt-1.5 font-mono">
+                Calcule en cours...
+            </p>
+        </div>
+
+        <!-- Liste des articles -->
+        <div data-cart-drawer-target="itemsContainer" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+            <!-- Rendu dynamique par Stimulus -->
+        </div>
+
+        <!-- Pied de panier / Résumé & CTA -->
+        <div data-cart-drawer-target="footer" class="p-4 sm:p-5 border-t border-white/10 bg-[#0A0C12] shrink-0 space-y-3">
+            <div class="flex items-baseline justify-between">
+                <span class="text-xs text-neutral-400 uppercase tracking-wider font-mono">Total de la commande</span>
+                <span data-cart-drawer-target="totalPriceText" class="text-xl font-bold font-mono text-orange-400">0 XOF</span>
+            </div>
+
+            <p class="text-[11px] text-neutral-500">
+                Paiement sécurisé par Wave, Orange Money ou à la livraison à Dakar.
+            </p>
+
+            <div class="flex flex-col gap-2 pt-1">
+                <a
+                    href="{{ path('app_cart_checkout') }}"
+                    data-cart-drawer-target="checkoutBtn"
+                    class="w-full py-3 px-4 rounded-xl bg-orange-500 hover:bg-orange-400 text-black font-extrabold text-sm text-center shadow-[0_0_20px_rgba(249,115,22,0.35)] transition transform active:scale-[0.98]"
+                >
+                    Commander maintenant →
+                </a>
+
+                <a
+                    href="{{ path('app_cart') }}"
+                    data-action="click->cart-drawer#close"
+                    class="w-full py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white text-xs font-medium text-center transition"
+                >
+                    Voir le panier complet
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

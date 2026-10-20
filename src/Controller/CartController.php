@@ -16,6 +16,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
 final class CartController extends AbstractController
 {
@@ -75,17 +76,83 @@ final class CartController extends AbstractController
         return $this->redirectToRoute('app_cart');
     }
 
+    #[Route('/panier/etat', name: 'app_cart_state', methods: ['GET'])]
+    public function state(CartManager $cartManager, CsrfTokenManagerInterface $csrfTokenManager): JsonResponse
+    {
+        $items = $cartManager->getItems($this->getUser());
+        $total = $cartManager->getTotalPrice($this->getUser());
+        $count = $cartManager->getTotalItemCount($this->getUser());
+        $freeShippingThreshold = 500000; // 500 000 XOF pour livraison offerte
+        $remaining = max(0, $freeShippingThreshold - $total);
+        $percent = $total >= $freeShippingThreshold ? 100 : (int) round(($total / $freeShippingThreshold) * 100);
+
+        $itemsData = array_map(function (CartItem $item) use ($csrfTokenManager) {
+            $product = $item->getProduct();
+            $itemTotal = $product->getPrice() * $item->getQuantity();
+
+            return [
+                'id' => $item->getId(),
+                'productId' => $product->getId(),
+                'name' => $product->getName(),
+                'slug' => $product->getSlug(),
+                'brand' => $product->getBrand(),
+                'price' => $product->getPrice(),
+                'formattedPrice' => number_format($product->getPrice(), 0, ',', ' ') . ' XOF',
+                'quantity' => $item->getQuantity(),
+                'selectedColor' => $item->getSelectedColor(),
+                'image' => $product->getImageFilename(),
+                'stock' => $product->getStock(),
+                'itemTotal' => $itemTotal,
+                'formattedItemTotal' => number_format($itemTotal, 0, ',', ' ') . ' XOF',
+                'updateToken' => $csrfTokenManager->getToken('cart_update_' . $item->getId())->getValue(),
+                'removeToken' => $csrfTokenManager->getToken('cart_remove_' . $item->getId())->getValue(),
+            ];
+        }, $items);
+
+        return $this->json([
+            'count' => $count,
+            'total' => $total,
+            'formattedTotal' => number_format($total, 0, ',', ' ') . ' XOF',
+            'freeShippingThreshold' => $freeShippingThreshold,
+            'freeShippingRemaining' => $remaining,
+            'freeShippingRemainingFormatted' => number_format($remaining, 0, ',', ' ') . ' XOF',
+            'freeShippingPercent' => $percent,
+            'items' => $itemsData,
+        ]);
+    }
+
     #[Route('/panier/modifier/{id}', name: 'app_cart_update', methods: ['POST'])]
     public function update(CartItem $cartItem, Request $request, CartManager $cartManager): Response
     {
         if (!$this->isCsrfTokenValid('cart_update_' . $cartItem->getId(), $request->request->get('_token'))) {
+            if ($request->isXmlHttpRequest() || $request->headers->get('Accept') === 'application/json') {
+                return $this->json(['error' => 'Token CSRF invalide.'], 403);
+            }
             throw $this->createAccessDeniedException('Token CSRF invalide.');
         }
 
         $this->checkCartItemAccess($cartItem, $request);
 
         $quantity = (int) $request->request->get('quantity', 1);
-        $cartManager->updateQuantity($cartItem, $quantity);
+
+        try {
+            $cartManager->updateQuantity($cartItem, $quantity);
+        } catch (\LogicException $e) {
+            if ($request->isXmlHttpRequest() || $request->headers->get('Accept') === 'application/json') {
+                return $this->json(['error' => $e->getMessage()], 400);
+            }
+            $this->addFlash('error', $e->getMessage());
+            return $this->redirectToRoute('app_cart');
+        }
+
+        if ($request->isXmlHttpRequest() || $request->headers->get('Accept') === 'application/json') {
+            return $this->json([
+                'success' => true,
+                'cartCount' => $cartManager->getTotalItemCount($this->getUser()),
+                'total' => $cartManager->getTotalPrice($this->getUser()),
+                'formattedTotal' => number_format($cartManager->getTotalPrice($this->getUser()), 0, ',', ' ') . ' XOF',
+            ]);
+        }
 
         return $this->redirectToRoute('app_cart');
     }
@@ -94,12 +161,24 @@ final class CartController extends AbstractController
     public function remove(CartItem $cartItem, Request $request, CartManager $cartManager): Response
     {
         if (!$this->isCsrfTokenValid('cart_remove_' . $cartItem->getId(), $request->request->get('_token'))) {
+            if ($request->isXmlHttpRequest() || $request->headers->get('Accept') === 'application/json') {
+                return $this->json(['error' => 'Token CSRF invalide.'], 403);
+            }
             throw $this->createAccessDeniedException('Token CSRF invalide.');
         }
 
         $this->checkCartItemAccess($cartItem, $request);
 
         $cartManager->removeItem($cartItem);
+
+        if ($request->isXmlHttpRequest() || $request->headers->get('Accept') === 'application/json') {
+            return $this->json([
+                'success' => true,
+                'cartCount' => $cartManager->getTotalItemCount($this->getUser()),
+                'total' => $cartManager->getTotalPrice($this->getUser()),
+                'formattedTotal' => number_format($cartManager->getTotalPrice($this->getUser()), 0, ',', ' ') . ' XOF',
+            ]);
+        }
 
         return $this->redirectToRoute('app_cart');
     }

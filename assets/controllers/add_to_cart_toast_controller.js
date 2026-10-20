@@ -33,6 +33,7 @@ export default class extends Controller {
                 const data = await response.json()
                 this.showToast(data.message || '✔ Produit ajouté au panier')
                 this.updateCartCount(data.cartCount)
+                window.dispatchEvent(new CustomEvent('cart:open'))
             } else {
                 this.showToast('Une erreur est survenue', true)
             }

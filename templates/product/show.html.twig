@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}{{ product.name }} — TechLink Dakar{% endblock %}
+{% block title %}{{ product.name }} — {{ product.brand }} | TechLink Dakar{% endblock %}
 
 {% block meta_description %}{{ product.description|slice(0, 155)|striptags|trim ~ '...' }}{% endblock %}
 
@@ -11,232 +11,544 @@
 {% endblock %}
 
 {% block body %}
-{% for message in app.flashes('success') %}
-    <div class="max-w-7xl mx-auto px-6 pt-6">
-        <div class="bg-green-500/10 border border-green-500 text-green-500 text-sm rounded-xl px-4 py-3">
-            {{ message }}
-        </div>
-    </div>
-{% endfor %}
-{% for message in app.flashes('error') %}
-    <div class="max-w-7xl mx-auto px-6 pt-6">
-        <div class="bg-red-500/10 border border-red-500 text-red-500 text-sm rounded-xl px-4 py-3">
-            {{ message }}
-        </div>
-    </div>
-{% endfor %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 lg:py-10">
 
-    <section class="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-2 gap-12">
-        <div class="self-start" data-controller="product-gallery">
-            {% if product.imageFilename %}
-                <div class="overflow-hidden rounded-2xl bg-neutral-900 mb-4 border border-neutral-800">
+    <!-- Fil d'Ariane -->
+    <nav class="flex items-center gap-2 text-xs text-neutral-400 mb-6 font-mono overflow-x-auto" aria-label="Fil d'Ariane">
+        <a href="{{ path('app_home') }}" class="hover:text-white transition">Accueil</a>
+        <span>/</span>
+        <a href="{{ path('app_product_index') }}" class="hover:text-white transition">Catalogue</a>
+        {% if product.category %}
+            <span>/</span>
+            <a href="{{ path('app_product_index', {'categorie[]': product.category.slug}) }}" class="hover:text-white transition">
+                {{ product.category.name }}
+            </a>
+        {% endif %}
+        <span>/</span>
+        <span class="text-neutral-200 truncate">{{ product.name }}</span>
+    </nav>
+
+    <!-- Hero Produit : Galerie (Gauche) + Buy Box (Droite) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 mb-16">
+
+        <!-- ========================================== -->
+        <!-- COLONNE GAUCHE : GALERIE & CERTIFICATION   -->
+        <!-- ========================================== -->
+        <div class="lg:col-span-7 flex flex-col gap-6" data-controller="product-gallery">
+
+            <!-- Cadre Image Principale -->
+            <div class="relative rounded-3xl bg-[#0D0F17] border border-white/10 p-6 flex items-center justify-center overflow-hidden aspect-4/3 group">
+                <!-- Badges d'état & Promo -->
+                <div class="absolute top-4 left-4 z-10 flex items-center gap-2 flex-wrap">
+                    <span class="text-xs font-mono px-3 py-1 rounded-full {{ product.condition.badgeClasses }}">
+                        {{ product.condition.label }}
+                    </span>
+                    {% if product.oldPrice and product.oldPrice > product.price %}
+                        {% set discount = ((product.oldPrice - product.price) / product.oldPrice * 100)|round %}
+                        <span class="text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30">
+                            -{{ discount }}% Économie
+                        </span>
+                    {% endif %}
+                </div>
+
+                <!-- Bouton Comparer rapide -->
+                <div class="absolute top-4 right-4 z-10">
+                    <button
+                        type="button"
+                        data-controller="comparison"
+                        data-comparison-button
+                        data-product-id="{{ product.id }}"
+                        data-action="click->comparison#toggle"
+                        data-comparison-id-param="{{ product.id }}"
+                        class="px-3 py-1.5 rounded-xl border border-white/10 bg-neutral-900/80 hover:bg-neutral-800 text-neutral-300 hover:text-white text-xs font-mono flex items-center gap-1.5 transition"
+                        title="Comparer ce produit avec d'autres références"
+                    >
+                        <span data-comparison-button-label>+ Comparer</span>
+                    </button>
+                </div>
+
+                <!-- Image avec Zoom -->
+                {% if product.imageFilename %}
                     <img
                         data-product-gallery-target="mainImage"
                         src="{{ asset('images/products/' ~ product.imageFilename) }}"
                         alt="{{ product.name }}"
-                        class="h-96 w-full object-cover opacity-0"
-                        onload="this.classList.remove('opacity-0')"
+                        class="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500 cursor-zoom-in"
                     >
-                </div>
-            {% else %}
-                <div class="bg-neutral-900 rounded-2xl h-96 mb-4 flex flex-col items-center justify-center border border-neutral-800 text-neutral-500 font-mono">
-                    <span class="text-4xl mb-2">💻</span>
-                    <span class="text-xs uppercase tracking-widest">{{ product.brand|default('TechLink') }}</span>
-                </div>
-            {% endif %}
+                {% else %}
+                    <div class="flex flex-col items-center justify-center text-neutral-600">
+                        <span class="text-6xl mb-2">⚡</span>
+                        <span class="text-xs font-mono tracking-widest uppercase">{{ product.brand|default('TechLink') }}</span>
+                    </div>
+                {% endif %}
+            </div>
 
-            {% if product.productImages|length > 0 %}
-                <div class="flex gap-3">
+            <!-- Miniatures interactives -->
+            {% if product.productImages|length > 0 or product.imageFilename %}
+                <div class="flex items-center gap-3 overflow-x-auto pb-2 custom-scrollbar">
                     {% if product.imageFilename %}
                         <button
                             type="button"
                             data-action="click->product-gallery#change"
                             data-image="{{ asset('images/products/' ~ product.imageFilename) }}"
-                            class="w-16 h-16 rounded-lg overflow-hidden border-2 border-orange-500 flex-shrink-0"
+                            class="w-20 h-20 rounded-2xl bg-[#0D0F17] border-2 border-orange-500 p-2 overflow-hidden shrink-0 flex items-center justify-center transition"
                         >
-                            <img src="{{ asset('images/products/' ~ product.imageFilename) }}" class="w-full h-full object-cover">
+                            <img src="{{ asset('images/products/' ~ product.imageFilename) }}" alt="" class="max-h-full max-w-full object-contain">
                         </button>
                     {% endif %}
-                    {% for image in product.productImages|sort((a, b) => a.position <=> b.position) %}
+                    {% for img in product.productImages|sort((a, b) => a.position <=> b.position) %}
                         <button
                             type="button"
                             data-action="click->product-gallery#change"
-                            data-image="{{ asset('images/products/' ~ image.filename) }}"
-                            class="w-16 h-16 rounded-lg overflow-hidden border-2 border-transparent hover:border-orange-500 flex-shrink-0 transition"
+                            data-image="{{ asset('images/products/' ~ img.filename) }}"
+                            class="w-20 h-20 rounded-2xl bg-[#0D0F17] border border-white/10 hover:border-orange-500/50 p-2 overflow-hidden shrink-0 flex items-center justify-center transition"
                         >
-                            <img src="{{ asset('images/products/' ~ image.filename) }}" class="w-full h-full object-cover">
+                            <img src="{{ asset('images/products/' ~ img.filename) }}" alt="" class="max-h-full max-w-full object-contain">
                         </button>
                     {% endfor %}
                 </div>
             {% endif %}
+
+            <!-- Grille de Réassurance Matérielle -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-white/10">
+                <div class="p-3 rounded-2xl bg-[#0D0F17] border border-white/5 flex flex-col items-center text-center">
+                    <span class="text-xl mb-1 text-cyan-400">⚡</span>
+                    <span class="text-xs font-bold text-white">Livraison 24h</span>
+                    <span class="text-[10px] text-neutral-400 font-mono">Dakar Express</span>
+                </div>
+                <div class="p-3 rounded-2xl bg-[#0D0F17] border border-white/5 flex flex-col items-center text-center">
+                    <span class="text-xl mb-1 text-emerald-400">🛡️</span>
+                    <span class="text-xs font-bold text-white">{{ product.warrantyMonths }} Mois Garantie</span>
+                    <span class="text-[10px] text-neutral-400 font-mono">Pièces & Atelier</span>
+                </div>
+                <div class="p-3 rounded-2xl bg-[#0D0F17] border border-white/5 flex flex-col items-center text-center">
+                    <span class="text-xl mb-1 text-orange-400">💳</span>
+                    <span class="text-xs font-bold text-white">Wave & OM</span>
+                    <span class="text-[10px] text-neutral-400 font-mono">Ou à la livraison</span>
+                </div>
+                <div class="p-3 rounded-2xl bg-[#0D0F17] border border-white/5 flex flex-col items-center text-center">
+                    <span class="text-xl mb-1 text-cyan-400">🔄</span>
+                    <span class="text-xs font-bold text-white">Retour 7 jours</span>
+                    <span class="text-[10px] text-neutral-400 font-mono">Remplacement direct</span>
+                </div>
+            </div>
         </div>
 
-        <div>
-            <p class="text-neutral-500 text-sm mb-2">{{ product.brand }}</p>
-            <h1 class="text-3xl font-bold mb-4">{{ product.name }}</h1>
-            
-            <div class="flex items-center justify-between mb-6">
-                <p class="text-orange-500 text-3xl font-bold">{{ product.price|number_format(0, ',', ' ') }} XOF</p>
+        <!-- ========================================== -->
+        <!-- COLONNE DROITE : STICKY BUY BOX            -->
+        <!-- ========================================== -->
+        <div class="lg:col-span-5 flex flex-col justify-start">
+            <div class="lg:sticky lg:top-24 space-y-6">
 
-                <button
-                    type="button"
-                    data-controller="wishlist-toggle"
-                    data-wishlist-toggle-url-value="{{ path('app_wishlist_toggle', {id: product.id}) }}"
-                    data-wishlist-toggle-token-value="{{ csrf_token('wishlist_toggle_' ~ product.id) }}"
-                    data-action="click->wishlist-toggle#toggle"
-                    class="flex items-center gap-2 text-sm text-neutral-400 hover:text-orange-500 transition"
-                >
-                    <span data-wishlist-toggle-target="icon" class="text-xl {{ isInWishlist|default(false) ? 'text-orange-500' : '' }}">{{ isInWishlist|default(false) ? '♥' : '♡' }}</span>
-                    <span class="hidden sm:inline">Ajouter aux favoris</span>
-                </button>
-            </div>
-
-            <p class="text-neutral-400 mb-8">{{ product.description }}</p>
-
-            {% if product.specifications is not empty %}
-            <div class="mb-8 border border-neutral-800 rounded-2xl overflow-hidden">
-                <p class="text-xs text-neutral-500 uppercase tracking-widest font-semibold px-5 py-3 border-b border-neutral-800 bg-neutral-900/50">
-                    🔧 Fiche technique
-                </p>
-                <dl class="divide-y divide-neutral-800/60">
-                    {% for key, value in product.specifications %}
-                    <div class="flex flex-col sm:flex-row sm:items-start px-5 py-3 text-sm hover:bg-neutral-900/30 transition-colors gap-1 sm:gap-4">
-                        <dt class="sm:w-2/5 text-neutral-500 shrink-0">{{ key }}</dt>
-                        <dd class="sm:w-3/5 font-medium text-white">{{ value }}</dd>
+                <!-- Marque, SKU & Wishlist -->
+                <div class="flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-mono font-bold text-orange-400 uppercase tracking-widest px-2.5 py-0.5 rounded bg-orange-500/10 border border-orange-500/20">
+                            {{ product.brand }}
+                        </span>
+                        <span class="text-xs font-mono text-neutral-500">
+                            {{ product.sku|default('SKU-TL-' ~ product.id) }}
+                        </span>
                     </div>
-                    {% endfor %}
-                </dl>
-            </div>
-            {% endif %}
 
-            <div class="flex flex-wrap gap-3 sm:gap-4 text-xs text-neutral-400 mb-8">
-                <span class="border border-neutral-800 rounded-full px-3 py-1">Livraison 24h</span>
-                <span class="border border-neutral-800 rounded-full px-3 py-1">Garantie incluse</span>
-                <span class="border border-neutral-800 rounded-full px-3 py-1">Wave / Orange Money</span>
-            </div>
+                    <!-- Bouton Favoris -->
+                    <button
+                        type="button"
+                        data-controller="wishlist-toggle"
+                        data-wishlist-toggle-url-value="{{ path('app_wishlist_toggle', {id: product.id}) }}"
+                        data-wishlist-toggle-token-value="{{ csrf_token('wishlist_toggle_' ~ product.id) }}"
+                        data-action="click->wishlist-toggle#toggle"
+                        class="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 hover:border-orange-500 text-xs transition"
+                    >
+                        <span data-wishlist-toggle-target="icon" class="text-base {{ isInWishlist ? 'text-orange-500' : 'text-neutral-400' }}">
+                            {{ isInWishlist ? '♥' : '♡' }}
+                        </span>
+                        <span class="text-neutral-300">{{ isInWishlist ? 'Dans les favoris' : 'Favoris' }}</span>
+                    </button>
+                </div>
 
-            <p class="text-sm mb-6">
-                {% if product.stock > 0 %}
-                    <span class="text-green-500">En stock</span> ({{ product.stock }} disponibles)
-                {% else %}
-                    <span class="text-red-500">Rupture de stock</span>
-                {% endif %}
-            </p>
+                <!-- Titre Principal -->
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight">
+                    {{ product.name }}
+                </h1>
 
-                <form method="post" action="{{ path('app_cart_add', {id: product.id}) }}" data-controller="add-to-cart-toast">
-                    <input type="hidden" name="_token" value="{{ csrf_token('cart_add_' ~ product.id) }}">
-                    <div class="mb-6">
-                        <p class="text-sm text-neutral-400 mb-3">Quantité</p>
-                        <div class="flex items-center gap-3 w-fit border border-neutral-700 rounded-full px-2 py-1">
-                            <button type="button" onclick="this.nextElementSibling.stepDown()" class="w-8 h-8 flex items-center justify-center hover:text-orange-500 transition text-lg">−</button>
-                            <input type="number" name="quantity" value="1" min="1" max="{{ product.stock }}" class="w-12 text-center bg-transparent focus:outline-none">
-                            <button type="button" onclick="this.previousElementSibling.stepUp()" class="w-8 h-8 flex items-center justify-center hover:text-orange-500 transition text-lg">+</button>
+                <!-- Note moyenne & Avis -->
+                <div class="flex items-center gap-3 text-xs font-mono">
+                    {% if averageRating > 0 %}
+                        <div class="flex items-center gap-1 text-orange-400">
+                            <span>⭐</span>
+                            <span class="font-bold text-white">{{ averageRating }}/5</span>
                         </div>
+                        <span class="text-neutral-500">•</span>
+                        <a href="#avis" class="text-neutral-400 hover:text-white underline">
+                            {{ product.reviews|length }} avis certifié{{ product.reviews|length > 1 ? 's' : '' }}
+                        </a>
+                    {% else %}
+                        <span class="text-neutral-500">Aucun avis pour l'instant</span>
+                    {% endif %}
+                </div>
+
+                <!-- Bloc Prix XOF & Économie -->
+                <div class="p-5 rounded-2xl bg-[#0D0F17] border border-white/10 space-y-2">
+                    <div class="flex items-baseline gap-3 flex-wrap">
+                        <span class="text-3xl sm:text-4xl font-extrabold font-mono text-orange-400 tracking-tight">
+                            {{ product.price|number_format(0, ',', ' ') }} XOF
+                        </span>
+                        {% if product.oldPrice and product.oldPrice > product.price %}
+                            <span class="text-base font-mono text-neutral-500 line-through">
+                                {{ product.oldPrice|number_format(0, ',', ' ') }} XOF
+                            </span>
+                            <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-300">
+                                Économisez {{ (product.oldPrice - product.price)|number_format(0, ',', ' ') }} XOF
+                            </span>
+                        {% endif %}
                     </div>
-                    {% if product.productColors|length > 0 %}
-                    <div class="mb-6">
-                        <p class="text-sm text-neutral-400 mb-3">Couleur</p>
-                        <div class="flex gap-2 flex-wrap">
-                            {% set hasAvailableColor = false %}
-                            {% for color in product.productColors %}
-                                <label class="{{ color.stock > 0 ? 'cursor-pointer' : 'cursor-not-allowed opacity-50' }}" title="{{ color.stock > 0 ? '' : 'Rupture de stock' }}">
-                                    <input type="radio" name="color" value="{{ color.name }}" class="peer hidden" {% if color.stock > 0 and not hasAvailableColor %}checked{% set hasAvailableColor = true %}{% endif %} {% if color.stock <= 0 %}disabled{% endif %}>
-                                    <span class="flex items-center gap-2 px-4 py-2 rounded-full border border-neutral-700 text-sm peer-checked:border-orange-500 peer-checked:text-orange-500 transition">
-                                        {% if color.hexCode %}
-                                            <span class="w-3 h-3 rounded-full border border-neutral-600" style="background-color: {{ color.hexCode }};"></span>
-                                        {% endif %}
-                                        {{ color.name }}
-                                        {% if color.stock <= 0 %}
-                                            <span class="text-[10px] ml-1">(Rupture)</span>
-                                        {% endif %}
-                                    </span>
+                    <p class="text-xs text-neutral-400 font-mono">
+                        Prix net TTC • Livraison offerte dès 500 000 XOF de panier
+                    </p>
+                </div>
+
+                <!-- Indicateur de Stock & Urgence -->
+                <div class="flex items-center gap-2 text-xs font-mono">
+                    {% if product.stock > 0 %}
+                        {% if product.isLowStock %}
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 font-bold">
+                                <span class="w-2 h-2 rounded-full bg-red-400 animate-ping"></span>
+                                Stock critique : plus que {{ product.stock }} unité{{ product.stock > 1 ? 's' : '' }} à Dakar !
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                                En stock à Dakar ({{ product.stock }} unités disponibles)
+                            </span>
+                        {% endif %}
+                    {% else %}
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 font-bold">
+                            ✕ Rupture de stock temporaire
+                        </span>
+                    {% endif %}
+                </div>
+
+                <!-- Formulaire d'ajout au panier AJAX -->
+                {% if product.stock > 0 %}
+                    <form
+                        method="post"
+                        action="{{ path('app_cart_add', {id: product.id}) }}"
+                        data-controller="add-to-cart-toast"
+                        class="space-y-5"
+                    >
+                        <input type="hidden" name="_token" value="{{ csrf_token('cart_add_' ~ product.id) }}">
+
+                        <!-- Sélecteur de Couleur -->
+                        {% if product.productColors|length > 0 %}
+                            <div>
+                                <label class="block text-xs font-mono uppercase tracking-wider text-neutral-400 mb-2.5">
+                                    Couleur disponible :
+                                </label>
+                                <div class="flex gap-2 flex-wrap">
+                                    {% set hasAvailableColor = false %}
+                                    {% for color in product.productColors %}
+                                        <label class="{{ color.stock > 0 ? 'cursor-pointer' : 'cursor-not-allowed opacity-40' }}" title="{{ color.stock > 0 ? color.name : color.name ~ ' (Rupture)' }}">
+                                            <input
+                                                type="radio"
+                                                name="color"
+                                                value="{{ color.name }}"
+                                                class="peer hidden"
+                                                {% if color.stock > 0 and not hasAvailableColor %}checked{% set hasAvailableColor = true %}{% endif %}
+                                                {% if color.stock <= 0 %}disabled{% endif %}
+                                            >
+                                            <span class="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-white/10 bg-[#12151E] text-xs font-mono peer-checked:border-orange-500 peer-checked:bg-orange-500/10 peer-checked:text-orange-300 transition">
+                                                {% if color.hexCode %}
+                                                    <span class="w-3.5 h-3.5 rounded-full border border-white/20 shadow-inner" style="background-color: {{ color.hexCode }};"></span>
+                                                {% endif %}
+                                                <span>{{ color.name }}</span>
+                                                {% if color.stock <= 0 %}
+                                                    <span class="text-[10px] text-red-400">(Épuisé)</span>
+                                                {% endif %}
+                                            </span>
+                                        </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <!-- Stepper Quantité -->
+                        <div>
+                            <label class="block text-xs font-mono uppercase tracking-wider text-neutral-400 mb-2">
+                                Quantité :
+                            </label>
+                            <div class="flex items-center border border-white/10 rounded-xl bg-[#0D0F17] w-fit overflow-hidden">
+                                <button
+                                    type="button"
+                                    onclick="this.nextElementSibling.stepDown()"
+                                    class="w-10 h-10 flex items-center justify-center text-neutral-400 hover:text-white hover:bg-white/5 text-base transition"
+                                >−</button>
+                                <input
+                                    type="number"
+                                    name="quantity"
+                                    value="1"
+                                    min="1"
+                                    max="{{ product.stock }}"
+                                    class="w-14 text-center bg-transparent focus:outline-none font-mono text-sm text-white"
+                                >
+                                <button
+                                    type="button"
+                                    onclick="this.previousElementSibling.stepUp()"
+                                    class="w-10 h-10 flex items-center justify-center text-neutral-400 hover:text-white hover:bg-white/5 text-base transition"
+                                >+</button>
+                            </div>
+                        </div>
+
+                        <!-- Bouton d'Ajout Principal -->
+                        <button
+                            type="submit"
+                            class="w-full py-4 px-6 rounded-2xl bg-orange-500 hover:bg-orange-400 text-black font-extrabold text-sm sm:text-base tracking-wide transition transform active:scale-[0.98] shadow-[0_0_25px_rgba(249,115,22,0.35)] flex items-center justify-center gap-2 cursor-pointer"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                            </svg>
+                            <span>Ajouter au panier</span>
+                        </button>
+                    </form>
+                {% else %}
+                    <div class="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-300 font-mono">
+                        Cet article est actuellement en rupture de stock. Contactez-nous par WhatsApp pour être notifié du prochain arrivage ou précommander.
+                    </div>
+                {% endif %}
+
+                <!-- Bouton WhatsApp Express -->
+                <a
+                    href="https://wa.me/221773956966?text={{ ('Bonjour TechLink, je souhaite commander immédiatement le produit suivant : ' ~ product.name ~ ' (' ~ product.price|number_format(0, '', '') ~ ' XOF) — ' ~ app.request.schemeAndHttpHost ~ path('app_product_show', {slug: product.slug}))|url_encode }}"
+                    target="_blank"
+                    rel="noopener"
+                    class="w-full py-3.5 px-6 rounded-2xl bg-[#0F2018] hover:bg-[#153024] border border-emerald-500/30 text-emerald-400 font-bold text-xs sm:text-sm tracking-wide transition flex items-center justify-center gap-2 shadow-lg"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-emerald-400">
+                        <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2zm5.71 14.16c-.24.68-1.4 1.31-1.93 1.36-.53.05-1.02.25-3.44-.72-2.91-1.16-4.78-4.13-4.92-4.32-.14-.19-1.18-1.57-1.18-3 0-1.42.75-2.12 1.02-2.41.27-.29.58-.36.78-.36.19 0 .39 0 .56.01.18.01.42-.07.66.5.24.58.83 2 .9 2.15.07.15.12.32.02.51-.1.19-.15.31-.29.48-.15.17-.31.38-.44.51-.15.15-.3.31-.13.6.17.29.75 1.24 1.62 2.01 1.11.99 2.05 1.3 2.34 1.44.29.15.46.13.63-.08.17-.2.72-.84.91-1.13.19-.29.38-.24.64-.14.26.1 1.65.78 1.94.92.29.14.48.22.55.34.07.12.07.7-.17 1.38z"/>
+                    </svg>
+                    <span>Commander via WhatsApp</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SECTION ONGLETS : SPÉCIFICATIONS & AVIS    -->
+    <!-- ========================================== -->
+    <div class="border-t border-white/10 pt-12 space-y-12">
+
+        <!-- Spécifications Détaillées du Produit -->
+        <section>
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-xl font-bold text-white tracking-tight">Spécifications Matérielles Complètes</h2>
+                    <p class="text-xs text-neutral-400 font-mono mt-1">Données techniques certifiées par l'atelier TechLink.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Description Métier -->
+                <div class="p-6 rounded-2xl bg-[#0D0F17] border border-white/10">
+                    <h3 class="text-xs font-mono uppercase tracking-wider text-cyan-400 font-semibold mb-3">
+                        Présentation du matériel
+                    </h3>
+                    <div class="prose prose-invert text-xs sm:text-sm text-neutral-300 leading-relaxed space-y-3">
+                        <p>{{ product.description|nl2br }}</p>
+                    </div>
+                </div>
+
+                <!-- Table des Spécifications JSON -->
+                <div class="rounded-2xl bg-[#0D0F17] border border-white/10 overflow-hidden">
+                    <div class="bg-white/5 px-5 py-3 border-b border-white/10 flex items-center justify-between">
+                        <span class="text-xs font-mono uppercase tracking-wider text-neutral-300 font-semibold">Fiche Technique</span>
+                        <span class="text-[10px] font-mono text-neutral-500">Architecture Hardware</span>
+                    </div>
+
+                    {% if product.specifications is not empty %}
+                        <dl class="divide-y divide-white/5 text-xs">
+                            {% for key, val in product.specifications %}
+                                <div class="px-5 py-3 flex items-start justify-between gap-4 hover:bg-white/5 transition">
+                                    <dt class="font-medium text-neutral-400 shrink-0 w-2/5">{{ key }}</dt>
+                                    <dd class="font-mono text-white text-right w-3/5 font-semibold">{{ val }}</dd>
+                                </div>
+                            {% endfor %}
+                        </dl>
+                    {% else %}
+                        <div class="p-6 text-center text-xs text-neutral-500 font-mono">
+                            Spécifications standard disponibles en atelier.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+
+        <!-- Matériel Recommandé & Similaire -->
+        {% if relatedProducts is not empty %}
+            <section class="pt-6 border-t border-white/10">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-white tracking-tight">Matériel Similaire & Recommandé</h2>
+                        <p class="text-xs text-neutral-400 font-mono mt-1">Configurations comparables dans la même gamme.</p>
+                    </div>
+                    <a href="{{ path('app_product_index') }}" class="text-xs text-orange-400 hover:text-orange-300 font-mono">
+                        Voir tout le catalogue →
+                    </a>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    {% for related in relatedProducts %}
+                        <article class="p-4 rounded-2xl bg-[#12151E] border border-white/10 hover:border-cyan-500/40 transition flex flex-col justify-between group">
+                            <div>
+                                <a href="{{ path('app_product_show', {slug: related.slug}) }}" class="block aspect-4/3 rounded-xl bg-neutral-950 border border-white/5 p-2 mb-3 overflow-hidden flex items-center justify-center">
+                                    {% if related.imageFilename %}
+                                        <img src="{{ asset('images/products/' ~ related.imageFilename) }}" alt="{{ related.name }}" class="h-full w-full object-contain group-hover:scale-105 transition-transform duration-300">
+                                    {% else %}
+                                        <span class="text-2xl text-neutral-600">⚡</span>
+                                    {% endif %}
+                                </a>
+                                <p class="text-[10px] font-mono text-neutral-400 uppercase">{{ related.brand }}</p>
+                                <h4 class="text-xs font-bold text-white line-clamp-2 mb-2">
+                                    <a href="{{ path('app_product_show', {slug: related.slug}) }}" class="hover:text-cyan-400 transition">
+                                        {{ related.name }}
+                                    </a>
+                                </h4>
+                            </div>
+                            <div class="pt-3 border-t border-white/10 flex items-center justify-between">
+                                <span class="text-xs font-mono font-bold text-orange-400">
+                                    {{ related.price|number_format(0, ',', ' ') }} XOF
+                                </span>
+                                <a href="{{ path('app_product_show', {slug: related.slug}) }}" class="text-xs text-neutral-300 hover:text-white font-mono">
+                                    Voir →
+                                </a>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            </section>
+        {% endif %}
+
+        <!-- Avis Clients & Notation -->
+        <section id="avis" class="pt-6 border-t border-white/10">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-xl font-bold text-white tracking-tight">Retours d'Expérience & Avis Clients</h2>
+                    <p class="text-xs text-neutral-400 font-mono mt-1">
+                        {% if averageRating > 0 %}
+                            Note globale certifiée : <strong>{{ averageRating }}/5</strong> sur {{ product.reviews|length }} avis
+                        {% else %}
+                            Soyez le premier client à donner votre avis sur ce matériel.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Formulaire de publication si connecté et éligible -->
+            {% if app.user and canReview %}
+                <form method="post" action="{{ path('app_product_review', {slug: product.slug}) }}" class="p-6 rounded-2xl bg-[#0D0F17] border border-white/10 mb-8 space-y-4">
+                    <h3 class="text-xs font-mono uppercase tracking-wider text-orange-400 font-bold">Publier votre retour d'expérience</h3>
+                    <div>
+                        <p class="text-xs text-neutral-400 mb-2 font-mono">Votre évaluation :</p>
+                        <div class="flex gap-2">
+                            {% for i in 1..5 %}
+                                <label for="rating-{{ i }}">
+                                    <input type="radio" id="rating-{{ i }}" name="rating" value="{{ i }}" class="peer hidden" required>
+                                    <span class="text-2xl cursor-pointer opacity-30 peer-checked:opacity-100 transition">⭐</span>
                                 </label>
                             {% endfor %}
                         </div>
                     </div>
-                    {% endif %}
+                    <textarea
+                        name="comment"
+                        rows="3"
+                        required
+                        placeholder="Précisez votre cas d'usage (autonomie, performances sous charge, finitions...)"
+                        class="w-full bg-[#12151E] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-orange-500 placeholder-neutral-500 font-mono"
+                    ></textarea>
                     <button
                         type="submit"
-                        class="bg-orange-500 hover:bg-orange-400 text-black font-extrabold px-8 py-3.5 rounded-xl transition duration-150 transform active:scale-[0.97] shadow-lg shadow-orange-500/20 w-full md:w-auto cursor-pointer"
+                        class="px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-400 text-black font-bold text-xs transition"
                     >
-                        Ajouter au panier
+                        Valider mon avis
                     </button>
                 </form>
-
-            <a href="https://wa.me/221773956966?text={{ ('Bonjour TechLink, je souhaite commander : ' ~ product.name ~ ' (' ~ product.price|number_format(0, '', '') ~ ' XOF) — ' ~ app.request.schemeAndHttpHost ~ path('app_product_show', {slug: product.slug}))|url_encode }}" target="_blank" rel="noopener" class="mt-3 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 text-white font-bold px-8 py-3.5 rounded-xl transition duration-150 transform active:scale-[0.97] shadow-lg shadow-green-600/20 w-full md:w-auto">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
-                    <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2zm5.71 14.16c-.24.68-1.4 1.31-1.93 1.36-.53.05-1.02.25-3.44-.72-2.91-1.16-4.78-4.13-4.92-4.32-.14-.19-1.18-1.57-1.18-3 0-1.42.75-2.12 1.02-2.41.27-.29.58-.36.78-.36.19 0 .39 0 .56.01.18.01.42-.07.66.5.24.58.83 2 .9 2.15.07.15.12.32.02.51-.1.19-.15.31-.29.48-.15.17-.31.38-.44.51-.15.15-.3.31-.13.6.17.29.75 1.24 1.62 2.01 1.11.99 2.05 1.3 2.34 1.44.29.15.46.13.63-.08.17-.2.72-.84.91-1.13.19-.29.38-.24.64-.14.26.1 1.65.78 1.94.92.29.14.48.22.55.34.07.12.07.7-.17 1.38z"/>
-                </svg>
-                Commander via WhatsApp
-            </a>
-        </div>
-    </section>
-
-    <section class="max-w-7xl mx-auto px-6 pb-16">
-        <h2 class="text-2xl font-bold mb-2">Avis clients</h2>
-        <p class="text-neutral-400 mb-8">
-            {% if averageRating > 0 %}
-                ⭐ {{ averageRating }}/5 — {{ product.reviews|length }} avis
-            {% else %}
-                Aucun avis pour l'instant
             {% endif %}
-        </p>
 
-        {% if app.user and canReview %}
-            <form method="post" action="{{ path('app_product_review', {slug: product.slug}) }}" class="border border-neutral-800 rounded-2xl p-6 mb-8 flex flex-col gap-4">
-                <div>
-                    <p class="text-sm text-neutral-400 mb-2">Ta note</p>
-                    <div class="flex gap-2">
-                        {% for i in 1..5 %}
-                            <label for="rating-{{ i }}">
-                                <input type="radio" id="rating-{{ i }}" name="rating" value="{{ i }}" class="peer hidden" required>
-                                <span class="text-2xl cursor-pointer grayscale peer-checked:grayscale-0 transition">⭐</span>
-                            </label>
-                        {% endfor %}
+            <!-- Liste des avis -->
+            <div class="space-y-3">
+                {% for review in reviews %}
+                    <div class="p-5 rounded-2xl bg-[#0D0F17] border border-white/10">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-xs text-white">{{ review.user.firstName }}</span>
+                                {% if review.isVerified %}
+                                    <span class="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                                        ✔ Achat vérifié Dakar
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <div class="text-xs text-orange-400">
+                                {% for i in 1..review.rating %}⭐{% endfor %}
+                            </div>
+                        </div>
+                        <p class="text-xs text-neutral-300 leading-relaxed font-mono">{{ review.comment }}</p>
+
+                        {% if app.user and review.user == app.user %}
+                            <form method="post" action="{{ path('app_review_delete', {id: review.id}) }}" class="mt-3">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete_review_' ~ review.id) }}">
+                                <button type="submit" class="text-[11px] text-red-400 hover:underline" onclick="return confirm('Confirmer la suppression de votre avis ?')">
+                                    Supprimer mon avis
+                                </button>
+                            </form>
+                        {% endif %}
                     </div>
-                </div>
-                <textarea name="comment" rows="3" required placeholder="Partage ton expérience avec ce produit..." class="w-full bg-neutral-900 border border-neutral-700 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-orange-500"></textarea>
-                <button type="submit" class="bg-white text-black font-semibold px-6 py-2.5 rounded-full hover:bg-orange-500 transition w-fit">
-                    Publier mon avis
-                </button>
-            </form>
-        {% endif %}
-
-       <div class="flex flex-col gap-4">
-    {% for review in reviews %}
-        <div class="border border-neutral-800 rounded-2xl p-6">
-            <div class="flex items-center justify-between mb-2">
-                <p class="font-semibold">{{ review.user.firstName }}</p>
-                <p class="text-orange-500">
-                    {% for i in 1..review.rating %}⭐{% endfor %}
-                </p>
+                {% else %}
+                    <div class="p-8 rounded-2xl bg-[#0D0F17] border border-white/5 text-center text-xs text-neutral-500 font-mono">
+                        Aucun avis déposé pour le moment.
+                    </div>
+                {% endfor %}
             </div>
-            {% if review.isVerified %}
-                <span class="text-xs text-green-500 bg-green-500/10 px-2 py-0.5 rounded-full">✔ Achat vérifié</span>
+
+            <!-- Pagination Avis -->
+            {% if totalReviewPages > 1 %}
+                <div class="flex items-center justify-center gap-2 mt-6">
+                    {% for p in 1..totalReviewPages %}
+                        <a
+                            href="{{ path('app_product_show', {slug: product.slug}) }}?avis_page={{ p }}#avis"
+                            class="w-8 h-8 flex items-center justify-center rounded-xl text-xs font-mono transition {{ p == reviewsPage ? 'bg-orange-500 text-black font-bold' : 'border border-white/10 text-neutral-400 hover:text-white' }}"
+                        >
+                            {{ p }}
+                        </a>
+                    {% endfor %}
+                </div>
             {% endif %}
-            <p class="text-neutral-400 text-sm mt-3">{{ review.comment }}</p>
-            {% if app.user and review.user == app.user %}
-                <form method="post" action="{{ path('app_review_delete', {id: review.id}) }}" class="mt-3">
-                    <input type="hidden" name="_token" value="{{ csrf_token('delete_review_' ~ review.id) }}">
-                    <button type="submit" class="text-xs text-red-500 hover:underline" onclick="return confirm('Supprimer ton avis ?')">
-                        Supprimer mon avis
-                    </button>
-                </form>
-            {% endif %}
-        </div>
-    {% else %}
-        <p class="text-neutral-500 text-sm">Sois le premier à laisser un avis sur ce produit.</p>
-    {% endfor %}
+        </section>
+    </div>
 </div>
 
-{% if totalReviewPages > 1 %}
-    <div class="flex items-center justify-center gap-2 mt-8">
-        {% for i in 1..totalReviewPages %}
-            <a href="{{ path('app_product_show', {slug: product.slug}) }}?avis_page={{ i }}#avis" class="w-9 h-9 flex items-center justify-center rounded-full text-sm transition {{ i == reviewsPage ? 'bg-orange-500 text-black font-semibold' : 'border border-neutral-800 hover:border-orange-500 hover:text-orange-500' }}">
-                {{ i }}
-            </a>
-        {% endfor %}
+<!-- ========================================== -->
+<!-- STICKY BOTTOM BUY BAR (MOBILE VIEW ONLY)   -->
+<!-- ========================================== -->
+<div class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0D0F17]/95 backdrop-blur-xl border-t border-white/10 p-3 px-4 flex items-center justify-between gap-3 shadow-2xl">
+    <div class="min-w-0 flex-1">
+        <p class="text-xs font-bold text-white truncate">{{ product.name }}</p>
+        <p class="text-xs font-mono font-bold text-orange-400">{{ product.price|number_format(0, ',', ' ') }} XOF</p>
     </div>
-{% endif %}
-    </section>
+
+    {% if product.stock > 0 %}
+        <form method="post" action="{{ path('app_cart_add', {id: product.id}) }}" data-controller="add-to-cart-toast">
+            <input type="hidden" name="_token" value="{{ csrf_token('cart_add_' ~ product.id) }}">
+            <input type="hidden" name="quantity" value="1">
+            <button
+                type="submit"
+                class="px-4 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-400 text-black font-bold text-xs tracking-wide shadow-lg shrink-0"
+            >
+                Ajouter au panier
+            </button>
+        </form>
+    {% else %}
+        <span class="text-xs font-mono text-red-400 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20">
+            Rupture
+        </span>
+    {% endif %}
+</div>
 {% endblock %}
