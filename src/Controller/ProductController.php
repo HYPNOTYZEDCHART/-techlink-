@@ -104,22 +104,37 @@ public function show(#[MapEntity(mapping: ['slug' => 'slug'])] Product $product,
     ]);
 }
     #[Route('/api/recherche-produits', name: 'app_api_product_search')]
+    #[Route('/produits/recherche/live', name: 'app_product_search_live')]
     public function searchApi(Request $request, ProductRepository $productRepository): JsonResponse
     {
-        $query = $request->query->get('q', '');
+        $query = trim((string) $request->query->get('q', ''));
 
-        if (strlen($query) < 2) {
+        if (mb_strlen($query) < 2) {
             return $this->json([]);
         }
 
-        $products = $productRepository->searchSuggestions($query);
+        $products = $productRepository->searchSuggestions($query, 8);
 
-        $results = array_map(fn ($product) => [
+        $results = array_map(fn (Product $product) => [
+            'id' => $product->getId(),
             'name' => $product->getName(),
             'brand' => $product->getBrand(),
+            'sku' => $product->getSku(),
             'price' => $product->getPrice(),
+            'formattedPrice' => number_format($product->getPrice(), 0, ',', ' ') . ' XOF',
+            'oldPrice' => $product->getOldPrice(),
+            'formattedOldPrice' => $product->getOldPrice() ? number_format($product->getOldPrice(), 0, ',', ' ') . ' XOF' : null,
             'slug' => $product->getSlug(),
             'image' => $product->getImageFilename(),
+            'inStock' => ($product->getStock() ?? 0) > 0,
+            'stock' => $product->getStock() ?? 0,
+            'isLowStock' => $product->isLowStock(),
+            'condition' => [
+                'value' => $product->getCondition()->value,
+                'label' => $product->getCondition()->label(),
+                'badgeClasses' => $product->getCondition()->badgeClasses(),
+            ],
+            'category' => $product->getCategory() ? $product->getCategory()->getName() : null,
         ], $products);
 
         return $this->json($results);

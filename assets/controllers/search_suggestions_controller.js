@@ -39,15 +39,21 @@ export default class extends Controller {
         }
 
         this.resultsTarget.innerHTML = products.map(product => `
-            <a href="/produit/${product.slug}" class="flex items-center gap-3 px-4 py-3 hover:bg-neutral-900 transition">
-                <div class="w-12 h-12 rounded-lg bg-neutral-900 flex-shrink-0 overflow-hidden">
-                    ${product.image ? `<img src="/images/products/${product.image}" class="w-full h-full object-cover">` : ''}
+            <a href="/produit/${product.slug}" class="flex items-center gap-3 px-4 py-3 hover:bg-neutral-900 transition border-b border-neutral-900/50 last:border-0">
+                <div class="w-12 h-12 rounded-lg bg-neutral-900 border border-neutral-800 flex-shrink-0 overflow-hidden flex items-center justify-center">
+                    ${product.image ? `<img src="/images/products/${product.image}" class="w-full h-full object-cover">` : `<span class="text-xs text-neutral-600 font-mono">TL</span>`}
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-xs text-neutral-500">${product.brand}</p>
-                    <p class="text-sm font-medium truncate">${product.name}</p>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-neutral-500 font-mono">${product.brand}</span>
+                        ${product.condition ? `<span class="text-[10px] px-1.5 py-0.5 rounded-full ${product.condition.badgeClasses}">${product.condition.label}</span>` : ''}
+                    </div>
+                    <p class="text-sm font-medium truncate text-neutral-100">${product.name}</p>
                 </div>
-                <p class="text-sm text-orange-500 font-semibold whitespace-nowrap">${Math.round(product.price / 100).toLocaleString('fr-FR')} XOF</p>
+                <div class="text-right">
+                    <p class="text-sm text-orange-500 font-semibold whitespace-nowrap">${product.formattedPrice || (product.price.toLocaleString('fr-FR') + ' XOF')}</p>
+                    <span class="text-[10px] ${product.inStock ? 'text-emerald-400' : 'text-neutral-500'} font-mono">${product.inStock ? 'En stock' : 'Rupture'}</span>
+                </div>
             </a>
         `).join('')
 

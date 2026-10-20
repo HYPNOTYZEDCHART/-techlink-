@@ -1,131 +1,534 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Catalogue — TechLink{% endblock %}
+{% block title %}Catalogue Matériel & High-Tech — TechLink{% endblock %}
 
 {% block meta_description %}
-    {%- if selectedCategories|length > 0 -%}
-        Découvrez notre sélection de {{ selectedCategories[0].name }} et plus chez TechLink. Matériel de qualité et livraison rapide sous 24h à Dakar.
-    {%- elseif selectedBrands|length > 0 -%}
-        Découvrez nos produits des marques {{ selectedBrands|join(', ') }} chez TechLink. Les meilleurs composants au meilleur prix à Dakar.
-    {%- else -%}
-        Explorez tout notre catalogue d'ordinateurs, smartphones et composants informatiques de qualité chez TechLink. Livraison sous 24h à Dakar.
-    {%- endif -%}
+    Découvrez notre sélection de laptops, smartphones et stations de travail chez TechLink Dakar. Matériel certifié, garantie atelier et livraison en 24h.
 {% endblock %}
 
 {% block body %}
-    <section class="max-w-7xl mx-auto px-6 py-12">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 py-8" data-controller="catalog-filter">
 
-        <div class="flex items-center justify-between mb-8 reveal reveal-delay-100">
-            <h1 class="text-3xl font-bold">
-                {% if selectedCategories|length == 1 %}
-                    {{ selectedCategories[0].name }}
-                {% elseif selectedCategories|length > 1 %}
-                    Produits filtrés ({{ selectedCategories|length }} catégories)
-                {% else %}
-                    Tous nos produits
-                {% endif %}
-                
-                {% if selectedBrands|length == 1 %}
-                    — {{ selectedBrands[0] }}
-                {% elseif selectedBrands|length > 1 %}
-                    — {{ selectedBrands|length }} marques
-                {% endif %}
+    <!-- En-tête de page -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div>
+            <nav class="flex items-center gap-2 text-xs text-neutral-400 mb-2 font-mono" aria-label="Fil d'Ariane">
+                <a href="{{ path('app_home') }}" class="hover:text-white transition">Accueil</a>
+                <span>/</span>
+                <span class="text-orange-500">Catalogue Matériel</span>
+            </nav>
+            <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-white flex items-center gap-3">
+                <span>Catalogue Haute Performance</span>
+                <span class="text-xs font-mono font-normal text-neutral-400 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 hidden md:inline-block">
+                    Dakar Express 24h
+                </span>
             </h1>
-            <p class="text-neutral-500 text-sm">{{ products|length }} résultat{{ products|length > 1 ? 's' : '' }}</p>
         </div>
 
-        {% if products is empty %}
-            <div class="flex flex-col items-center justify-center py-24 text-center">
-                <div class="text-6xl mb-4">📦</div>
-                <h2 class="text-xl font-bold mb-2">Aucun produit trouvé</h2>
-                <p class="text-neutral-500 mb-6 max-w-sm">
-                    Aucun produit ne correspond à ta recherche pour le moment. Essaie un autre filtre ou reviens plus tard.
-                </p>
-                <a href="{{ path('app_product_index') }}" class="bg-white text-black font-semibold px-6 py-3 rounded-full hover:bg-orange-500 transition">
-                    Voir tous les produits
-                </a>
-            </div>
-        {% else %}
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-6" data-controller="reveal">
-                {% for product in products %}
-                    <a href="{{ path('app_product_show', {slug: product.slug}) }}" class="relative border border-neutral-800 rounded-2xl p-4 product-card-3d block group reveal reveal-delay-{{ loop.index0 * 50 > 500 ? 500 : loop.index0 * 50 }}">
-                        {% if product.oldPrice and product.oldPrice > product.price %}
-                            {% set discount = ((product.oldPrice - product.price) / product.oldPrice * 100)|round %}
-                            <span class="absolute top-3 left-3 z-10 bg-orange-500 text-black text-xs font-bold px-2.5 py-1 rounded-full shadow-lg">
-                                -{{ discount }}%
-                            </span>
-                        {% endif %}
+        <!-- Bouton Filtres sur Mobile -->
+        <div class="flex items-center gap-3 lg:hidden">
+            <button
+                type="button"
+                data-action="click->catalog-filter#toggleMobileSidebar"
+                class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#12151E] border border-white/10 text-white text-xs font-semibold hover:border-orange-500/50 transition"
+            >
+                <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                </svg>
+                <span>Filtres & Options</span>
+            </button>
+        </div>
+    </div>
 
+    <!-- Layout 2 colonnes : Sidebar Filtres + Grille Produits -->
+    <div class="flex flex-col lg:flex-row items-start gap-8">
+
+        <!-- ========================================== -->
+        <!-- SIDEBAR FILTRES (Desktop + Drawer Mobile)  -->
+        <!-- ========================================== -->
+        <aside
+            data-catalog-filter-target="mobileSidebar"
+            class="hidden lg:block fixed inset-0 lg:static z-50 lg:z-auto bg-black/80 lg:bg-transparent backdrop-blur-sm lg:backdrop-blur-none w-full lg:w-72 shrink-0"
+        >
+            <div class="h-full lg:h-auto overflow-y-auto lg:overflow-visible p-6 lg:p-0 max-w-sm lg:max-w-none ml-auto lg:ml-0 bg-[#0E121B] lg:bg-transparent border-l lg:border-l-0 border-white/10 lg:border-none shadow-2xl lg:shadow-none">
+
+                <!-- Header du tiroir mobile -->
+                <div class="flex items-center justify-between lg:hidden mb-6 pb-4 border-b border-white/10">
+                    <h2 class="text-base font-bold text-white">Filtres du catalogue</h2>
+                    <button
+                        type="button"
+                        data-action="click->catalog-filter#closeMobileSidebar"
+                        class="w-8 h-8 rounded-full bg-white/5 border border-white/10 text-neutral-400 hover:text-white flex items-center justify-center text-lg"
+                    >
+                        ×
+                    </button>
+                </div>
+
+                <form
+                    action="{{ path('app_product_index') }}"
+                    method="get"
+                    data-catalog-filter-target="form"
+                    class="space-y-6 lg:bg-[#0D0F17] lg:border lg:border-white/10 lg:rounded-2xl lg:p-5 lg:sticky lg:top-24"
+                >
+                    <!-- Header Sidebar Desktop -->
+                    <div class="hidden lg:flex items-center justify-between pb-4 border-b border-white/10">
+                        <span class="text-xs font-mono uppercase tracking-wider text-neutral-300 font-semibold flex items-center gap-1.5">
+                            <span>⚡</span>
+                            <span>Filtres Matériels</span>
+                        </span>
                         <button
                             type="button"
-                            data-controller="wishlist-toggle"
-                            data-wishlist-toggle-url-value="{{ path('app_wishlist_toggle', {id: product.id}) }}"
-                            data-wishlist-toggle-token-value="{{ csrf_token('wishlist_toggle_' ~ product.id) }}"
-                            data-action="click->wishlist-toggle#toggle"
-                            class="absolute top-3 right-3 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-neutral-900/80 backdrop-blur-sm border border-neutral-700 hover:border-orange-500 transition group/wishlist"
+                            data-action="click->catalog-filter#reset"
+                            class="text-xs text-orange-400 hover:text-orange-300 transition"
                         >
-                            <span data-wishlist-toggle-target="icon" class="text-lg {{ product.id in wishlistProductIds|default([]) ? 'text-orange-500' : 'text-neutral-400 group-hover/wishlist:text-orange-500' }} transition">
-                                {{ product.id in wishlistProductIds|default([]) ? '♥' : '♡' }}
-                            </span>
+                            Réinitialiser
                         </button>
+                    </div>
 
-                        {% if product.imageFilename %}
-                            <div class="overflow-hidden rounded-xl mb-4 bg-neutral-900 image-zoom-hover">
-                                <img
-                                    src="{{ asset('images/products/' ~ product.imageFilename) }}"
-                                    alt="{{ product.name }}"
-                                    loading="lazy"
-                                    class="h-40 w-full object-cover opacity-0 transition-opacity duration-300"
-                                    onload="this.classList.remove('opacity-0')"
+                    <!-- Champ Recherche Conservé -->
+                    {% if searchQuery %}
+                        <input type="hidden" name="q" value="{{ searchQuery }}">
+                        <div class="p-2.5 rounded-xl bg-orange-500/10 border border-orange-500/20 text-xs text-orange-300 flex items-center justify-between">
+                            <span class="truncate">Mot-clé : <strong>{{ searchQuery }}</strong></span>
+                            <a href="{{ path('app_product_index', app.request.query.all|merge({'q': null})) }}" class="text-neutral-400 hover:text-white ml-2 text-sm">×</a>
+                        </div>
+                    {% endif %}
+
+                    <!-- Tri du catalogue -->
+                    <div>
+                        <label for="catalog-sort" class="block text-xs font-mono text-neutral-400 uppercase tracking-wider mb-2">Trier par</label>
+                        <select
+                            id="catalog-sort"
+                            name="tri"
+                            data-action="change->catalog-filter#filterChange"
+                            class="w-full bg-[#12151E] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-orange-500 transition cursor-pointer"
+                        >
+                            <option value="nouveautes" {{ currentSort == 'nouveautes' ? 'selected' : '' }}>Nouveautés & récents</option>
+                            <option value="prix_asc" {{ currentSort == 'prix_asc' ? 'selected' : '' }}>Prix : Moins cher au plus cher</option>
+                            <option value="prix_desc" {{ currentSort == 'prix_desc' ? 'selected' : '' }}>Prix : Plus cher au moins cher</option>
+                            <option value="nom_asc" {{ currentSort == 'nom_asc' ? 'selected' : '' }}>Nom : De A à Z</option>
+                        </select>
+                    </div>
+
+                    <!-- Filtre Condition / État -->
+                    <div>
+                        <p class="text-xs font-mono text-neutral-400 uppercase tracking-wider mb-2.5">État matériel</p>
+                        <div class="grid grid-cols-2 gap-1.5">
+                            <label class="cursor-pointer">
+                                <input
+                                    type="radio"
+                                    name="condition"
+                                    value=""
+                                    {{ currentCondition is empty ? 'checked' : '' }}
+                                    data-action="change->catalog-filter#filterChange"
+                                    class="sr-only peer"
+                                >
+                                <div class="px-2.5 py-1.5 rounded-lg text-center text-xs font-medium border border-white/10 bg-[#12151E] text-neutral-400 peer-checked:border-cyan-500 peer-checked:bg-cyan-500/10 peer-checked:text-cyan-300 transition">
+                                    Tous
+                                </div>
+                            </label>
+                            {% for cond in conditions %}
+                                <label class="cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="condition"
+                                        value="{{ cond.value }}"
+                                        {{ currentCondition == cond.value ? 'checked' : '' }}
+                                        data-action="change->catalog-filter#filterChange"
+                                        class="sr-only peer"
+                                    >
+                                    <div class="px-2.5 py-1.5 rounded-lg text-center text-[11px] font-medium border border-white/10 bg-[#12151E] text-neutral-400 peer-checked:border-orange-500 peer-checked:bg-orange-500/10 peer-checked:text-orange-300 transition truncate">
+                                        {{ cond.label }}
+                                    </div>
+                                </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Filtre Disponibilité Stock -->
+                    <div class="pt-3 border-t border-white/5">
+                        <label class="flex items-center justify-between cursor-pointer group">
+                            <span class="text-xs text-neutral-300 group-hover:text-white transition flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                                En stock uniquement
+                            </span>
+                            <input
+                                type="checkbox"
+                                name="en_stock"
+                                value="1"
+                                {{ inStockOnly ? 'checked' : '' }}
+                                data-action="change->catalog-filter#filterChange"
+                                class="w-4 h-4 rounded border-neutral-700 bg-neutral-900 text-orange-500 focus:ring-orange-500 cursor-pointer"
+                            >
+                        </label>
+                    </div>
+
+                    <!-- Filtre Fourchette de Prix (XOF) -->
+                    <div class="pt-3 border-t border-white/5">
+                        <p class="text-xs font-mono text-neutral-400 uppercase tracking-wider mb-2">Budget (XOF)</p>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <input
+                                    type="number"
+                                    name="prix_min"
+                                    value="{{ priceMin }}"
+                                    placeholder="Min"
+                                    step="10000"
+                                    min="0"
+                                    data-action="input->catalog-filter#debouncedPriceChange"
+                                    class="w-full bg-[#12151E] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-orange-500 font-mono"
                                 >
                             </div>
-                        {% else %}
-                            <div class="bg-neutral-900 rounded-xl h-40 mb-4 flex flex-col items-center justify-center border border-neutral-800 text-neutral-500 text-xs font-mono tracking-widest uppercase">
-                                <span class="text-2xl mb-1">💻</span>
-                                <span>{{ product.brand|default('TechLink') }}</span>
+                            <div>
+                                <input
+                                    type="number"
+                                    name="prix_max"
+                                    value="{{ priceMax }}"
+                                    placeholder="Max"
+                                    step="10000"
+                                    min="0"
+                                    data-action="input->catalog-filter#debouncedPriceChange"
+                                    class="w-full bg-[#12151E] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-orange-500 font-mono"
+                                >
                             </div>
-                        {% endif %}
-
-                        <p class="text-xs text-neutral-500">{{ product.brand }}</p>
-                        <p class="font-semibold">{{ product.name }}</p>
-                        <div class="flex items-center gap-2 mt-2">
-                            <p class="text-orange-500 font-bold">{{ product.price|number_format(0, ',', ' ') }} XOF</p>
-                            {% if product.oldPrice and product.oldPrice > product.price %}
-                                <p class="text-neutral-500 text-xs line-through">{{ product.oldPrice|number_format(0, ',', ' ') }} XOF</p>
-                            {% endif %}
                         </div>
-                        <p class="text-xs text-neutral-500 mt-1">
-                            {% if product.stock > 0 %}
-                                En stock ({{ product.stock }})
-                            {% else %}
-                                Rupture de stock
-                            {% endif %}
-                        </p>
-                    </a>
-                {% endfor %}
+                    </div>
+
+                    <!-- Filtre Catégories -->
+                    {% if allCategories is not empty %}
+                        <div class="pt-3 border-t border-white/5">
+                            <p class="text-xs font-mono text-neutral-400 uppercase tracking-wider mb-2.5">Catégories</p>
+                            <div class="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+                                {% set selectedSlugs = selectedCategories|map(c => c.slug) %}
+                                {% for category in allCategories %}
+                                    <label class="flex items-center gap-2.5 text-xs cursor-pointer group">
+                                        <input
+                                            type="checkbox"
+                                            name="categorie[]"
+                                            value="{{ category.slug }}"
+                                            {{ category.slug in selectedSlugs ? 'checked' : '' }}
+                                            data-action="change->catalog-filter#filterChange"
+                                            class="w-4 h-4 rounded border-neutral-700 bg-neutral-900 text-orange-500 focus:ring-orange-500 cursor-pointer"
+                                        >
+                                        <span class="text-neutral-400 group-hover:text-neutral-200 transition truncate">{{ category.name }}</span>
+                                    </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <!-- Filtre Marques -->
+                    {% if allBrands is not empty %}
+                        <div class="pt-3 border-t border-white/5">
+                            <p class="text-xs font-mono text-neutral-400 uppercase tracking-wider mb-2.5">Marques</p>
+                            <div class="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+                                {% for brand in allBrands %}
+                                    <label class="flex items-center gap-2.5 text-xs cursor-pointer group">
+                                        <input
+                                            type="checkbox"
+                                            name="marque[]"
+                                            value="{{ brand }}"
+                                            {{ brand in selectedBrands ? 'checked' : '' }}
+                                            data-action="change->catalog-filter#filterChange"
+                                            class="w-4 h-4 rounded border-neutral-700 bg-neutral-900 text-orange-500 focus:ring-orange-500 cursor-pointer"
+                                        >
+                                        <span class="text-neutral-400 group-hover:text-neutral-200 transition">{{ brand }}</span>
+                                    </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <!-- Bouton Appliquer sur Mobile -->
+                    <div class="pt-4 lg:hidden">
+                        <button
+                            type="button"
+                            data-action="click->catalog-filter#closeMobileSidebar"
+                            class="w-full py-2.5 bg-orange-500 text-black font-semibold text-xs rounded-xl shadow-lg"
+                        >
+                            Appliquer les filtres
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </aside>
+
+        <!-- ========================================== -->
+        <!-- GRILLE DE PRODUITS & CONTENU PRINCIPAL     -->
+        <!-- ========================================== -->
+        <main class="flex-1 min-w-0 w-full">
+
+            <!-- Barre d'état & Compteur -->
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-white/10">
+                <div data-catalog-filter-target="counter" class="text-xs font-mono text-neutral-400">
+                    <span class="text-white font-bold">{{ totalItems }}</span> résultat{{ totalItems > 1 ? 's' : '' }} au catalogue
+                </div>
             </div>
 
-            {% if totalPages > 1 %}
-                <div class="flex items-center justify-center gap-2 mt-12">
-                    {% if currentPage > 1 %}
-                        <a href="{{ path('app_product_index', app.request.query.all|merge({page: currentPage - 1})) }}" class="px-4 py-2 rounded-full border border-neutral-800 text-sm hover:border-orange-500 hover:text-orange-500 transition">
-                            ← Précédent
-                        </a>
-                    {% endif %}
+            <!-- Filtres actifs (Badges amovibles) -->
+            <div data-catalog-filter-target="activeFilters" class="flex flex-wrap items-center gap-2 mb-6">
+                {% for cat in selectedCategories %}
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-xs text-neutral-300">
+                        <span>Catégorie: {{ cat.name }}</span>
+                        <button
+                            type="button"
+                            data-action="click->catalog-filter#removeFilter"
+                            data-catalog-filter-type-param="categorie"
+                            data-catalog-filter-value-param="{{ cat.slug }}"
+                            class="text-neutral-500 hover:text-white transition ml-1"
+                        >×</button>
+                    </span>
+                {% endfor %}
 
-                    {% for i in 1..totalPages %}
-                        <a href="{{ path('app_product_index', app.request.query.all|merge({page: i})) }}" class="w-10 h-10 flex items-center justify-center rounded-full text-sm transition {{ i == currentPage ? 'bg-orange-500 text-black font-semibold' : 'border border-neutral-800 hover:border-orange-500 hover:text-orange-500' }}">
-                            {{ i }}
-                        </a>
-                    {% endfor %}
+                {% for brand in selectedBrands %}
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-xs text-neutral-300">
+                        <span>Marque: {{ brand }}</span>
+                        <button
+                            type="button"
+                            data-action="click->catalog-filter#removeFilter"
+                            data-catalog-filter-type-param="marque"
+                            data-catalog-filter-value-param="{{ brand }}"
+                            class="text-neutral-500 hover:text-white transition ml-1"
+                        >×</button>
+                    </span>
+                {% endfor %}
 
-                    {% if currentPage < totalPages %}
-                        <a href="{{ path('app_product_index', app.request.query.all|merge({page: currentPage + 1})) }}" class="px-4 py-2 rounded-full border border-neutral-800 text-sm hover:border-orange-500 hover:text-orange-500 transition">
-                            Suivant →
-                        </a>
+                {% if currentCondition %}
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-xs text-cyan-300">
+                        <span>État: {{ currentCondition }}</span>
+                        <button
+                            type="button"
+                            data-action="click->catalog-filter#removeFilter"
+                            data-catalog-filter-type-param="condition"
+                            class="text-cyan-400 hover:text-white transition ml-1"
+                        >×</button>
+                    </span>
+                {% endif %}
+
+                {% if inStockOnly %}
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300">
+                        <span>En stock uniquement</span>
+                        <button
+                            type="button"
+                            data-action="click->catalog-filter#removeFilter"
+                            data-catalog-filter-type-param="stock"
+                            class="text-emerald-400 hover:text-white transition ml-1"
+                        >×</button>
+                    </span>
+                {% endif %}
+
+                {% if priceMin %}
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-xs text-neutral-300">
+                        <span>Min: {{ priceMin|number_format(0, ',', ' ') }} XOF</span>
+                        <button
+                            type="button"
+                            data-action="click->catalog-filter#removeFilter"
+                            data-catalog-filter-type-param="prix_min"
+                            class="text-neutral-500 hover:text-white transition ml-1"
+                        >×</button>
+                    </span>
+                {% endif %}
+
+                {% if priceMax %}
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-xs text-neutral-300">
+                        <span>Max: {{ priceMax|number_format(0, ',', ' ') }} XOF</span>
+                        <button
+                            type="button"
+                            data-action="click->catalog-filter#removeFilter"
+                            data-catalog-filter-type-param="prix_max"
+                            class="text-neutral-500 hover:text-white transition ml-1"
+                        >×</button>
+                    </span>
+                {% endif %}
+            </div>
+
+            <!-- Grille Dynamique de Produits -->
+            <div data-catalog-filter-target="content">
+                {% if products is empty %}
+                    <div class="py-20 px-6 rounded-3xl bg-[#0D0F17] border border-white/10 text-center max-w-md mx-auto shadow-2xl">
+                        <div class="w-16 h-16 rounded-2xl bg-orange-500/10 border border-orange-500/20 text-orange-400 flex items-center justify-center mx-auto mb-4 text-2xl">
+                            🔍
+                        </div>
+                        <h2 class="text-lg font-bold text-white mb-2">Aucun matériel ne correspond à ces critères</h2>
+                        <p class="text-xs text-neutral-400 mb-6">
+                            Modifiez les filtres de marque, de catégorie ou le budget pour afficher d'autres références disponibles.
+                        </p>
+                        <button
+                            type="button"
+                            data-action="click->catalog-filter#reset"
+                            class="px-5 py-2.5 rounded-xl bg-white text-black font-semibold text-xs hover:bg-neutral-200 transition"
+                        >
+                            Réinitialiser tous les filtres
+                        </button>
+                    </div>
+                {% else %}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                        {% for product in products %}
+                            <article class="group relative rounded-2xl bg-[#12151E] border border-white/10 p-4 flex flex-col justify-between hover:border-cyan-500/40 hover:shadow-[0_10px_30px_rgba(0,0,0,0.7)] transition-all duration-300">
+
+                                <div>
+                                    <!-- Badges en haut de la carte -->
+                                    <div class="flex items-center justify-between gap-2 mb-3">
+                                        <div class="flex items-center gap-1.5 flex-wrap">
+                                            <!-- Badge Condition -->
+                                            <span class="text-[10px] font-mono px-2 py-0.5 rounded-full {{ product.condition.badgeClasses }}">
+                                                {{ product.condition.label }}
+                                            </span>
+
+                                            <!-- Badge Réduction -->
+                                            {% if product.oldPrice and product.oldPrice > product.price %}
+                                                {% set discount = ((product.oldPrice - product.price) / product.oldPrice * 100)|round %}
+                                                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-300 border border-orange-500/30">
+                                                    -{{ discount }}%
+                                                </span>
+                                            {% endif %}
+                                        </div>
+
+                                        <!-- Bouton Wishlist -->
+                                        <button
+                                            type="button"
+                                            data-controller="wishlist-toggle"
+                                            data-wishlist-toggle-url-value="{{ path('app_wishlist_toggle', {id: product.id}) }}"
+                                            data-wishlist-toggle-token-value="{{ csrf_token('wishlist_toggle_' ~ product.id) }}"
+                                            data-action="click->wishlist-toggle#toggle"
+                                            class="w-7 h-7 flex items-center justify-center rounded-full bg-neutral-900/80 border border-white/10 hover:border-orange-500 text-xs transition"
+                                            title="Ajouter aux favoris"
+                                        >
+                                            <span data-wishlist-toggle-target="icon" class="{{ product.id in wishlistProductIds ? 'text-orange-500' : 'text-neutral-500' }}">
+                                                {{ product.id in wishlistProductIds ? '♥' : '♡' }}
+                                            </span>
+                                        </button>
+                                    </div>
+
+                                    <!-- Image du Produit -->
+                                    <a href="{{ path('app_product_show', {slug: product.slug}) }}" class="block overflow-hidden rounded-xl bg-neutral-950 border border-white/5 mb-3 aspect-4/3 flex items-center justify-center p-3">
+                                        {% if product.imageFilename %}
+                                            <img
+                                                src="{{ asset('images/products/' ~ product.imageFilename) }}"
+                                                alt="{{ product.name }}"
+                                                loading="lazy"
+                                                class="h-full w-full object-contain group-hover:scale-105 transition-transform duration-300"
+                                            >
+                                        {% else %}
+                                            <span class="text-3xl text-neutral-600">⚡</span>
+                                        {% endif %}
+                                    </a>
+
+                                    <!-- Marque & Titre -->
+                                    <p class="text-[11px] font-mono text-neutral-400 uppercase tracking-wider mb-1">{{ product.brand }}</p>
+                                    <h3 class="font-bold text-white text-sm leading-snug mb-2 line-clamp-2">
+                                        <a href="{{ path('app_product_show', {slug: product.slug}) }}" class="hover:text-cyan-400 transition">
+                                            {{ product.name }}
+                                        </a>
+                                    </h3>
+
+                                    <!-- Extrait Spécifications Clés -->
+                                    {% if product.specifications is not empty %}
+                                        <div class="flex flex-wrap gap-1 mb-3">
+                                            {% for specKey, specVal in product.specifications|slice(0, 2) %}
+                                                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/5 border border-white/5 text-neutral-400">
+                                                    {{ specVal }}
+                                                </span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Bas de carte : Prix, Stock & Bouton Comparer -->
+                                <div class="pt-3 border-t border-white/10 flex flex-col gap-2.5">
+                                    <div class="flex items-baseline justify-between gap-2">
+                                        <div>
+                                            <span class="text-base font-mono font-bold text-orange-400">
+                                                {{ product.price|number_format(0, ',', ' ') }} XOF
+                                            </span>
+                                            {% if product.oldPrice and product.oldPrice > product.price %}
+                                                <span class="text-[11px] font-mono text-neutral-500 line-through ml-1.5">
+                                                    {{ product.oldPrice|number_format(0, ',', ' ') }}
+                                                </span>
+                                            {% endif %}
+                                        </div>
+
+                                        <!-- Stock status -->
+                                        <div>
+                                            {% if product.stock > 0 %}
+                                                <span class="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                                    {{ product.stock }} dispo
+                                                </span>
+                                            {% else %}
+                                                <span class="text-[10px] font-mono text-red-400">Rupture</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <!-- Bouton Comparer Stimulus -->
+                                    <div class="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            data-comparison-button
+                                            data-product-id="{{ product.id }}"
+                                            data-action="click->comparison#toggle"
+                                            data-comparison-id-param="{{ product.id }}"
+                                            class="w-full py-1.5 px-3 rounded-xl border border-neutral-800 bg-neutral-900/90 text-neutral-400 hover:text-white hover:border-neutral-600 text-xs font-medium flex items-center justify-center gap-1.5 transition"
+                                            title="Ajouter ou retirer du comparateur technique"
+                                        >
+                                            <span data-comparison-button-label>+ Comparer</span>
+                                        </button>
+                                        <a
+                                            href="{{ path('app_product_show', {slug: product.slug}) }}"
+                                            class="shrink-0 p-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white text-xs transition"
+                                            title="Consulter la fiche"
+                                        >
+                                            →
+                                        </a>
+                                    </div>
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Pagination Dynamique -->
+                    {% if totalPages > 1 %}
+                        <div class="flex items-center justify-center gap-2 mt-10">
+                            {% if currentPage > 1 %}
+                                <a
+                                    href="{{ path('app_product_index', app.request.query.all|merge({page: currentPage - 1})) }}"
+                                    class="px-4 py-2 rounded-xl border border-white/10 text-xs font-mono text-neutral-300 hover:border-orange-500 hover:text-orange-400 transition"
+                                >
+                                    ← Précédent
+                                </a>
+                            {% endif %}
+
+                            {% for p in 1..totalPages %}
+                                {% if p == currentPage %}
+                                    <span class="w-9 h-9 flex items-center justify-center rounded-xl bg-orange-500 text-black font-mono font-bold text-xs shadow-lg">
+                                        {{ p }}
+                                    </span>
+                                {% elseif p == 1 or p == totalPages or (p >= currentPage - 2 and p <= currentPage + 2) %}
+                                    <a
+                                        href="{{ path('app_product_index', app.request.query.all|merge({page: p})) }}"
+                                        class="w-9 h-9 flex items-center justify-center rounded-xl border border-white/10 text-xs font-mono text-neutral-300 hover:border-orange-500 hover:text-orange-400 transition"
+                                    >
+                                        {{ p }}
+                                    </a>
+                                {% elseif p == currentPage - 3 or p == currentPage + 3 %}
+                                    <span class="text-neutral-500 font-mono text-xs">...</span>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if currentPage < totalPages %}
+                                <a
+                                    href="{{ path('app_product_index', app.request.query.all|merge({page: currentPage + 1})) }}"
+                                    class="px-4 py-2 rounded-xl border border-white/10 text-xs font-mono text-neutral-300 hover:border-orange-500 hover:text-orange-400 transition"
+                                >
+                                    Suivant →
+                                </a>
+                            {% endif %}
+                        </div>
                     {% endif %}
-                </div>
-            {% endif %}
-        {% endif %}
-    </section>
+                {% endif %}
+            </div>
+        </main>
+    </div>
+</div>
 {% endblock %}

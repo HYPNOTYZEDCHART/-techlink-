@@ -5,23 +5,31 @@
 </a>
 
         <div class="hidden md:flex flex-1 max-w-xl relative" data-controller="search-suggestions">
-    <form action="{{ path('app_product_index') }}" method="get" class="w-full">
-        <input
-            type="text"
-            name="recherche"
-            placeholder="Rechercher un laptop, un smartphone..."
-            autocomplete="off"
-            data-search-suggestions-target="input"
-            data-action="input->search-suggestions#search"
-            class="w-full bg-neutral-900 border border-neutral-700 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-orange-500"
-        >
-    </form>
+            <form action="{{ path('app_product_index') }}" method="get" class="w-full relative">
+                <input
+                    type="text"
+                    name="q"
+                    placeholder="Rechercher un laptop, un smartphone..."
+                    autocomplete="off"
+                    data-search-suggestions-target="input"
+                    data-action="input->search-suggestions#search"
+                    class="w-full bg-neutral-900 border border-neutral-700 rounded-full pl-5 pr-20 py-2.5 text-sm focus:outline-none focus:border-orange-500 text-white placeholder-neutral-500"
+                >
+                <button
+                    type="button"
+                    onclick="window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-0.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white rounded text-[11px] font-mono border border-neutral-700 transition"
+                    title="Ouvrir la recherche rapide (Ctrl+K)"
+                >
+                    Ctrl K
+                </button>
+            </form>
 
-    <div
-        data-search-suggestions-target="results"
-        class="hidden absolute left-0 top-full mt-2 w-full bg-neutral-950 border border-neutral-800 rounded-2xl shadow-xl overflow-hidden z-50 max-h-96 overflow-y-auto"
-    ></div>
-</div>
+            <div
+                data-search-suggestions-target="results"
+                class="hidden absolute left-0 top-full mt-2 w-full bg-[#12151E] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50 max-h-96 overflow-y-auto"
+            ></div>
+        </div>
         <div class="flex items-center gap-4">
     <span class="hidden lg:flex items-center gap-2 text-xs text-neutral-500 border border-neutral-800 rounded-full px-3 py-1.5">
         💳 Wave / Orange Money
@@ -49,6 +57,11 @@
         </a>
     {% endif %}
 
+    <a href="{{ path('app_product_compare') }}" class="relative hover:text-cyan-400 transition text-xl md:text-base mr-2" title="Comparateur de matériel">
+        <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+        <span data-comparison-header-count class="hidden absolute -top-2 -right-2 bg-cyan-500 text-black text-xs font-bold w-4 h-4 md:w-5 md:h-5 rounded-full items-center justify-center">0</span>
+    </a>
+
     <a href="{{ path('app_wishlist') }}" class="relative hover:text-orange-500 transition text-xl md:text-base mr-2">
         ♥
         <span data-wishlist-count class="absolute -top-2 -right-2 bg-orange-500 text-black text-xs font-bold w-4 h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center">{{ wishlist_count() }}</span>
@@ -65,17 +78,17 @@
         <form action="{{ path('app_product_index') }}" method="get">
             <input
                 type="text"
-                name="recherche"
+                name="q"
                 placeholder="Rechercher..."
                 autocomplete="off"
                 data-search-suggestions-target="input"
                 data-action="input->search-suggestions#search"
-                class="w-full bg-neutral-900 border border-neutral-700 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-orange-500"
+                class="w-full bg-neutral-900 border border-neutral-700 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-orange-500 text-white placeholder-neutral-500"
             >
         </form>
         <div
             data-search-suggestions-target="results"
-            class="hidden absolute left-6 right-6 mt-2 bg-neutral-950 border border-neutral-800 rounded-2xl shadow-xl overflow-hidden z-50 max-h-96 overflow-y-auto"
+            class="hidden absolute left-6 right-6 mt-2 bg-[#12151E] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50 max-h-96 overflow-y-auto"
         ></div>
     </div>
 
