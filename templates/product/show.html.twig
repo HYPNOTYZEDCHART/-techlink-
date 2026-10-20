@@ -29,7 +29,7 @@
     <section class="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-2 gap-12">
         <div class="self-start" data-controller="product-gallery">
             {% if product.imageFilename %}
-                <div class="overflow-hidden rounded-2xl bg-neutral-900 mb-4">
+                <div class="overflow-hidden rounded-2xl bg-neutral-900 mb-4 border border-neutral-800">
                     <img
                         data-product-gallery-target="mainImage"
                         src="{{ asset('images/products/' ~ product.imageFilename) }}"
@@ -39,7 +39,10 @@
                     >
                 </div>
             {% else %}
-                <div class="bg-neutral-900 rounded-2xl h-96 animate-pulse mb-4"></div>
+                <div class="bg-neutral-900 rounded-2xl h-96 mb-4 flex flex-col items-center justify-center border border-neutral-800 text-neutral-500 font-mono">
+                    <span class="text-4xl mb-2">💻</span>
+                    <span class="text-xs uppercase tracking-widest">{{ product.brand|default('TechLink') }}</span>
+                </div>
             {% endif %}
 
             {% if product.productImages|length > 0 %}

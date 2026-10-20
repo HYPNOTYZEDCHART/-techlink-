@@ -19,6 +19,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 #[AsCommand(
     name: 'app:seed',
@@ -32,6 +33,7 @@ class SeedDatabaseCommand extends Command
         private readonly ProductRepository $productRepository,
         private readonly UserRepository $userRepository,
         private readonly CouponRepository $couponRepository,
+        private readonly UserPasswordHasherInterface $passwordHasher,
     ) {
         parent::__construct();
     }
@@ -224,6 +226,8 @@ class SeedDatabaseCommand extends Command
 
         foreach ($productsData as $data) {
             $prod = $this->productRepository->findOneBy(['slug' => $data['slug']]);
+            $imageFilename = $data['slug'] . '.jpg';
+
             if (!$prod) {
                 $prod = new Product();
                 $prod->setName($data['name']);
@@ -235,6 +239,7 @@ class SeedDatabaseCommand extends Command
                 $prod->setSpecifications($data['specifications']);
                 $prod->setCategory($categories[$data['category']]);
                 $prod->setIsActive(true);
+                $prod->setImageFilename($imageFilename);
                 $prod->setSku(strtoupper(substr($data['brand'], 0, 3)) . '-' . rand(1000, 9999));
 
                 $this->entityManager->persist($prod);
@@ -249,6 +254,12 @@ class SeedDatabaseCommand extends Command
                 }
 
                 $io->writeln(sprintf('  + Produit créé : %s (%s XOF)', $data['name'], number_format($data['price'], 0, ',', ' ')));
+            } else {
+                // Mettre à jour l'image si non définie
+                if (!$prod->getImageFilename()) {
+                    $prod->setImageFilename($imageFilename);
+                    $io->writeln(sprintf('  * Image attachée au produit existant : %s -> %s', $data['name'], $imageFilename));
+                }
             }
         }
         $this->entityManager->flush();
@@ -287,16 +298,24 @@ class SeedDatabaseCommand extends Command
 
         // 4. Utilisateur Admin
         $admin = $this->userRepository->findOneBy(['email' => 'doumbiabecaye7@gmail.com']);
-        if (!$admin) {
+        if ($admin) {
+            $roles = $admin->getRoles();
+            if (!in_array('ROLE_ADMIN', $roles, true)) {
+                $roles[] = 'ROLE_ADMIN';
+                $admin->setRoles(array_unique($roles));
+                $this->entityManager->flush();
+                $io->writeln('  + Rôle ROLE_ADMIN garanti pour doumbiabecaye7@gmail.com');
+            }
+        } else {
             $admin = new User();
             $admin->setEmail('doumbiabecaye7@gmail.com');
             $admin->setRoles(['ROLE_ADMIN']);
             $admin->setFirstName('Becaye');
             $admin->setLastName('Doumbouya');
-            $admin->setPassword('$2y$13$q5CDlW4WJ7kSxLjkHSWAM.fa5BCjBR5Wph8.4YxOs6GDsTmpNeC4O');
+            $admin->setPassword($this->passwordHasher->hashPassword($admin, 'TechLink2026!'));
             $this->entityManager->persist($admin);
             $this->entityManager->flush();
-            $io->writeln('  + Compte Administrateur restauré (doumbiabecaye7@gmail.com)');
+            $io->writeln('  + Compte Administrateur créé (doumbiabecaye7@gmail.com / mot de passe par défaut : TechLink2026!)');
         }
 
         $io->success('Catalogue et données initiales restaurés avec succès !');
