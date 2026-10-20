@@ -72,7 +72,7 @@ RUN mkdir -p var/sessions/prod var/sessions/dev var/cache var/log public/uploads
 EXPOSE 80
 
 # Script de démarrage : migrations + cache + Apache
-RUN printf '#!/bin/sh\nset -e\necho "[TechLink] Mise a jour schema DB..."\nphp bin/console doctrine:schema:update --force --no-interaction 2>&1 || true\necho "[TechLink] Cache warmup..."\nphp bin/console cache:warmup --env=prod --no-interaction 2>&1 || true\necho "[TechLink] Apache start..."\nexec apache2-foreground\n' > /usr/local/bin/start.sh \
+RUN printf '#!/bin/sh\nset -e\necho "[TechLink] Application des migrations DB..."\nphp bin/console doctrine:migrations:migrate --no-interaction 2>&1 || php bin/console doctrine:schema:update --force --no-interaction 2>&1 || true\necho "[TechLink] Cache warmup..."\nphp bin/console cache:warmup --env=prod --no-interaction 2>&1 || true\necho "[TechLink] Apache start..."\nexec apache2-foreground\n' > /usr/local/bin/start.sh \
     && chmod +x /usr/local/bin/start.sh
 
 CMD ["/usr/local/bin/start.sh"]

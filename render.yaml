@@ -1,16 +1,18 @@
 databases:
-  # 1. Base de données PostgreSQL managée
+  # 1. Base de données PostgreSQL managée (Frankfurt - Europe)
   - name: techlink-db
     plan: free
+    region: frankfurt
     postgresMajorVersion: 16
 
 services:
 
-  # 2. Application Web Docker
+  # 2. Application Web Docker (Frankfurt - Europe)
   - type: web
     name: techlink-web
     env: docker
     plan: free
+    region: frankfurt
     dockerfilePath: ./Dockerfile
     envVars:
       - key: DATABASE_URL
@@ -20,7 +22,7 @@ services:
       - key: APP_ENV
         value: prod
       - key: APP_DEBUG
-        value: '1'
+        value: '0'
       - key: APP_SECRET
         generateValue: true
       - key: MAILER_DSN
