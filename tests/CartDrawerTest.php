@@ -147,4 +147,45 @@ class CartDrawerTest extends WebTestCase
         $this->assertTrue($removeData['success']);
         $this->assertSame(0, $removeData['cartCount']);
     }
+
+    public function testInvoiceGeneratorProducesValidPdfForGuestOrder(): void
+    {
+        $container = static::getContainer();
+        /** @var \App\Service\InvoiceGenerator $generator */
+        $generator = $container->get(\App\Service\InvoiceGenerator::class);
+        /** @var EntityManagerInterface $em */
+        $em = $container->get('doctrine.orm.entity_manager');
+
+        $product = $this->createSampleProduct($em, 'MacBook Air M3 Test', 'macbook-air-m3-test-' . uniqid(), 950000);
+
+        $order = new \App\Entity\CustomerOrder();
+        $order->setGuestFirstName('Amadou');
+        $order->setGuestLastName('Diallo');
+        $order->setGuestEmail('amadou.diallo@example.sn');
+        $order->setDeliveryPhone('+221771234567');
+        $order->setDeliveryAddress('Point E, en face de la pharmacie, Dakar');
+        $order->setDeliveryMethod(\App\Entity\CustomerOrder::DELIVERY_METHOD_TIAK_TIAK);
+        $order->setDeliveryFee(2000);
+        $order->setPaymentMethod(\App\Entity\CustomerOrder::PAYMENT_METHOD_WAVE);
+        $order->setEscrowStatus(\App\Entity\CustomerOrder::ESCROW_HELD);
+        $order->setStatus(\App\Entity\CustomerOrder::STATUS_PREPARING);
+        $order->setCreatedAt(new \DateTimeImmutable());
+        $order->generateTrackingNumber();
+
+        $item = new \App\Entity\OrderItem();
+        $item->setProduct($product);
+        $item->setCustomerOrder($order);
+        $item->setQuantity(1);
+        $item->setUnitPrice(950000);
+        $item->setSelectedColor('Minuit');
+        $item->setSerialNumber('SN-MAC-M3-987654');
+        $order->addOrderItem($item);
+
+        $order->setTotal(952000);
+
+        $pdf = $generator->generate($order);
+
+        $this->assertNotEmpty($pdf);
+        $this->assertStringStartsWith('%PDF-', $pdf);
+    }
 }

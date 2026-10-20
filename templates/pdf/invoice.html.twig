@@ -1,62 +1,319 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <title>Facture {{ order.trackingNumber|default('TL-' ~ order.id) }} — TechLink</title>
     <style>
-        body { font-family: Helvetica, sans-serif; color: #1a1a1a; font-size: 13px; }
-        .header { display: flex; justify-content: space-between; margin-bottom: 40px; }
-        .logo { font-size: 24px; font-weight: bold; }
-        .logo span { color: #f97316; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { text-align: left; border-bottom: 2px solid #1a1a1a; padding: 8px 4px; font-size: 12px; }
-        td { padding: 8px 4px; border-bottom: 1px solid #e5e5e5; }
-        .total-row { font-weight: bold; font-size: 16px; }
-        .info { margin-bottom: 4px; color: #525252; }
+        @page {
+            margin: 25px 30px;
+        }
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #0F172A;
+            font-size: 11px;
+            line-height: 1.4;
+            margin: 0;
+            padding: 0;
+        }
+        .header-table {
+            width: 100%;
+            border-bottom: 2px solid #F97316;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .logo {
+            font-size: 22px;
+            font-weight: bold;
+            color: #0F172A;
+            letter-spacing: -0.5px;
+        }
+        .logo-tag {
+            color: #64748B;
+        }
+        .logo-brand {
+            color: #F97316;
+        }
+        .company-info {
+            font-size: 9px;
+            color: #64748B;
+            line-height: 1.3;
+            margin-top: 4px;
+        }
+        .invoice-title-block {
+            text-align: right;
+        }
+        .invoice-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #0F172A;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .invoice-ref {
+            font-family: Courier, monospace;
+            font-size: 11px;
+            font-weight: bold;
+            color: #F97316;
+            margin-top: 2px;
+        }
+        .invoice-date {
+            font-size: 9px;
+            color: #64748B;
+            margin-top: 2px;
+        }
+        .two-cols {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .info-card {
+            background-color: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 6px;
+            padding: 10px 12px;
+            vertical-align: top;
+        }
+        .card-header {
+            font-size: 9px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #64748B;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            border-bottom: 1px solid #E2E8F0;
+            padding-bottom: 4px;
+        }
+        .info-line {
+            margin-bottom: 3px;
+            font-size: 10px;
+        }
+        .info-line strong {
+            color: #1E293B;
+        }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .items-table th {
+            background-color: #0F172A;
+            color: #FFFFFF;
+            text-align: left;
+            padding: 7px 8px;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .items-table td {
+            padding: 8px 8px;
+            border-bottom: 1px solid #E2E8F0;
+            font-size: 10px;
+        }
+        .items-table tr:nth-child(even) td {
+            background-color: #F8FAFC;
+        }
+        .badge {
+            display: inline-block;
+            font-size: 8px;
+            font-weight: bold;
+            padding: 2px 5px;
+            border-radius: 3px;
+            background-color: #E2E8F0;
+            color: #334155;
+            font-family: Courier, monospace;
+        }
+        .badge-color {
+            background-color: #FFEDD5;
+            color: #C2410C;
+        }
+        .badge-sn {
+            background-color: #E0F2FE;
+            color: #0369A1;
+        }
+        .totals-table {
+            width: 45%;
+            margin-left: auto;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+        }
+        .totals-table td {
+            padding: 5px 8px;
+            font-size: 10px;
+        }
+        .totals-table tr.grand-total td {
+            border-top: 2px solid #0F172A;
+            font-size: 13px;
+            font-weight: bold;
+            color: #C2410C;
+            background-color: #FFF7ED;
+            padding: 8px;
+        }
+        .warranty-box {
+            background-color: #F0FDF4;
+            border: 1px solid #BBF7D0;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-bottom: 20px;
+            font-size: 9px;
+            color: #166534;
+        }
+        .footer {
+            border-top: 1px solid #E2E8F0;
+            padding-top: 10px;
+            text-align: center;
+            font-size: 8px;
+            color: #94A3B8;
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div>
-            <p class="logo">&lt;/tech<span>link</span>&gt;</p>
-            <p class="info">Point E, Dakar, Sénégal</p>
-        </div>
-        <div style="text-align: right;">
-            <p style="font-size: 18px; font-weight: bold;">Facture n°{{ order.id }}</p>
-            <p class="info">{{ order.createdAt|date('d/m/Y') }}</p>
-        </div>
-    </div>
 
-    <div style="margin-bottom: 20px;">
-        <p class="info"><strong>Client :</strong> {{ order.user.firstName }} {{ order.user.lastName }}</p>
-        <p class="info"><strong>Email :</strong> {{ order.user.email }}</p>
-        <p class="info"><strong>Livraison :</strong> {{ order.deliveryAddress }} — {{ order.deliveryPhone }}</p>
-    </div>
+    <!-- Header Entreprise & Facture -->
+    <table class="header-table">
+        <tr>
+            <td style="width: 55%; vertical-align: top;">
+                <div class="logo">
+                    <span class="logo-tag">&lt;/</span><span class="logo-brand">tech</span>link<span class="logo-tag">&gt;</span>
+                </div>
+                <div class="company-info">
+                    <strong>TechLink Sénégal SARL</strong> • Matériel High-Tech & Stations de travail<br>
+                    Point E, Boulevard de l'Est, Immeuble Horizon, Dakar, Sénégal<br>
+                    NINEA : 009845123 • RCCM : SN-DKR-2024-B-11200<br>
+                    Tél : +221 77 395 69 66 • Email : support@techlink.sn
+                </div>
+            </td>
+            <td class="invoice-title-block" style="width: 45%; vertical-align: top;">
+                <div class="invoice-title">Facture Officielle</div>
+                <div class="invoice-ref">N° {{ order.trackingNumber|default('TL-' ~ order.id) }}</div>
+                <div class="invoice-date">
+                    Date : {{ order.createdAt|date('d/m/Y à H:i') }}<br>
+                    Statut : <strong>{{ order.status|upper }}</strong>
+                </div>
+            </td>
+        </tr>
+    </table>
 
-    <table>
+    <!-- Cartes Client & Livraison (Compatible Client Connecté & Invité) -->
+    <table class="two-cols">
+        <tr>
+            <td class="info-card" style="width: 48%; margin-right: 4%;">
+                <div class="card-header">Client Destinataire</div>
+                <div class="info-line">
+                    <strong>Nom :</strong> 
+                    {% if order.user %}
+                        {{ order.user.firstName }} {{ order.user.lastName }}
+                    {% else %}
+                        {{ order.guestFirstName|default('Client') }} {{ order.guestLastName|default('Invité') }}
+                    {% endif %}
+                </div>
+                <div class="info-line">
+                    <strong>Email :</strong> 
+                    {{ order.user ? order.user.email : (order.guestEmail|default('Non renseigné')) }}
+                </div>
+                <div class="info-line">
+                    <strong>Téléphone :</strong> {{ order.deliveryPhone|default('Non renseigné') }}
+                </div>
+            </td>
+            <td style="width: 4%;"></td>
+            <td class="info-card" style="width: 48%;">
+                <div class="card-header">Expédition & Mode de Paiement</div>
+                <div class="info-line">
+                    <strong>Mode :</strong> 
+                    {{ order.deliveryMethod == 'PICKUP' ? 'Retrait en boutique (Point E)' : 'Coursier Express Tiak-Tiak Dakar' }}
+                </div>
+                <div class="info-line">
+                    <strong>Adresse :</strong> {{ order.deliveryAddress }}
+                </div>
+                <div class="info-line">
+                    <strong>Paiement :</strong> {{ order.paymentMethod|default('WAVE') }} 
+                    <span class="badge">({{ order.escrowStatus != 'NONE' ? order.escrowStatus : (order.status == 'pending' ? 'En attente' : 'Validé') }})</span>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- Tableau des Produits Commandés -->
+    <table class="items-table">
         <thead>
             <tr>
-                <th>Produit</th>
-                <th>Quantité</th>
-                <th>Prix unitaire</th>
-                <th>Total</th>
+                <th style="width: 45%;">Désignation Matériel</th>
+                <th style="width: 15%; text-align: center;">SKU</th>
+                <th style="width: 10%; text-align: center;">Qté</th>
+                <th style="width: 15%; text-align: right;">Prix Unitaire</th>
+                <th style="width: 15%; text-align: right;">Total XOF</th>
             </tr>
         </thead>
         <tbody>
             {% for item in order.orderItems %}
                 <tr>
-                    <td>{{ item.product.name }}{% if item.selectedColor %} ({{ item.selectedColor }}){% endif %}</td>
-                    <td>{{ item.quantity }}</td>
-                    <td>{{ item.unitPrice|number_format(0, ',', ' ') }} XOF</td>
-                    <td>{{ (item.unitPrice * item.quantity)|number_format(0, ',', ' ') }} XOF</td>
+                    <td>
+                        <strong>{{ item.product.name }}</strong>
+                        {% if item.selectedColor %}
+                            <br><span class="badge badge-color">Couleur : {{ item.selectedColor }}</span>
+                        {% endif %}
+                        {% if item.serialNumber %}
+                            <br><span class="badge badge-sn">S/N IMEI : {{ item.serialNumber }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center; font-family: Courier, monospace; font-size: 9px; color: #64748B;">
+                        {{ item.product.sku|default('SKU-TL-' ~ item.product.id) }}
+                    </td>
+                    <td style="text-align: center; font-weight: bold;">
+                        {{ item.quantity }}
+                    </td>
+                    <td style="text-align: right; font-family: Courier, monospace;">
+                        {{ item.unitPrice|number_format(0, ',', ' ') }}
+                    </td>
+                    <td style="text-align: right; font-weight: bold; font-family: Courier, monospace;">
+                        {{ (item.unitPrice * item.quantity)|number_format(0, ',', ' ') }}
+                    </td>
                 </tr>
             {% endfor %}
-            <tr class="total-row">
-                <td colspan="3">Total</td>
-                <td>{{ order.total|number_format(0, ',', ' ') }} XOF</td>
-            </tr>
         </tbody>
     </table>
 
-    <p style="margin-top: 60px; color: #a3a3a3; font-size: 11px;">Merci pour ta confiance — TechLink</p>
+    <!-- Tableau des Totaux -->
+    <table class="totals-table">
+        <tr>
+            <td style="color: #64748B;">Sous-total matériel :</td>
+            <td style="text-align: right; font-family: Courier, monospace; font-weight: bold;">
+                {{ (order.total - order.deliveryFee)|number_format(0, ',', ' ') }} XOF
+            </td>
+        </tr>
+        <tr>
+            <td style="color: #64748B;">Frais de livraison Dakar :</td>
+            <td style="text-align: right; font-family: Courier, monospace;">
+                {% if order.deliveryFee > 0 %}
+                    {{ order.deliveryFee|number_format(0, ',', ' ') }} XOF
+                {% else %}
+                    <span style="color: #16A34A; font-weight: bold;">Gratuit</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% if order.couponCode %}
+            <tr>
+                <td style="color: #16A34A;">Coupon appliqué ({{ order.couponCode }}) :</td>
+                <td style="text-align: right; font-family: Courier, monospace; color: #16A34A;">Inclus</td>
+            </tr>
+        {% endif %}
+        <tr class="grand-total">
+            <td>TOTAL PAYÉ :</td>
+            <td style="text-align: right;">{{ order.total|number_format(0, ',', ' ') }} XOF</td>
+        </tr>
+    </table>
+
+    <!-- Encadré Garantie Certifiée Sénégal -->
+    <div class="warranty-box">
+        <strong>CERTIFICAT DE GARANTIE MATÉRIELLE ATELIER TECHLINK :</strong><br>
+        Ce document fait office de bon de garantie officiel pour une durée de <strong>24 mois</strong> à compter de la date d'émission. 
+        Toute panne matérielle couverte par la garantie donne droit à un diagnostic gratuit sous 24h et à une réparation/échange en atelier au Point E, Dakar.
+    </div>
+
+    <!-- Pied de Page Légal -->
+    <div class="footer">
+        TechLink Sénégal SARL au capital de 10 000 000 FCFA • RCCM SN-DKR-2024-B-11200 • NINEA 009845123 • TVA non applicable selon le régime en vigueur.<br>
+        Merci de votre confiance. Pour toute assistance technique ou suivi : support@techlink.sn ou WhatsApp au +221 77 395 69 66.
+    </div>
+
 </body>
 </html>
